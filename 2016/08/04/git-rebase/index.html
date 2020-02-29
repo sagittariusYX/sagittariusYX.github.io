@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="假设你现在基于远程分支”origin”，创建一个叫”mywork”的分支。 $ git checkout -b mywork origin 现在我们在这个分支做一些修改，然后生成两个提交(commit)。 $ vim file.txt $ git commit $ vim otherfile.txt $ git commit ...但是与此同时，有些人也在”origin”分支上做了一些修改并且做了">
+<meta property="og:type" content="article">
+<meta property="og:title" content="git rebase命令用法">
+<meta property="og:url" content="https://blog.yangx.site/2016/08/04/git-rebase/index.html">
+<meta property="og:site_name" content="YXiao&#39;s Blog">
+<meta property="og:description" content="假设你现在基于远程分支”origin”，创建一个叫”mywork”的分支。 $ git checkout -b mywork origin 现在我们在这个分支做一些修改，然后生成两个提交(commit)。 $ vim file.txt $ git commit $ vim otherfile.txt $ git commit ...但是与此同时，有些人也在”origin”分支上做了一些修改并且做了">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://blog.yangx.site/images/rebase0.png">
+<meta property="og:image" content="https://blog.yangx.site/images/rebase1.png">
+<meta property="og:image" content="https://blog.yangx.site/images/rebase2.png">
+<meta property="og:image" content="https://blog.yangx.site/images/rebase3.png">
+<meta property="og:image" content="https://blog.yangx.site/images/rebase4.png">
+<meta property="og:image" content="https://blog.yangx.site/images/rebase5.png">
+<meta property="article:published_time" content="2016-08-04T15:54:53.000Z">
+<meta property="article:modified_time" content="2020-02-29T10:40:51.704Z">
+<meta property="article:author" content="yxiao">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog.yangx.site/images/rebase0.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>git rebase命令用法</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2016/08/21/python-memory-control/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2016/07/18/pandas-intro/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://blog.yangx.site/2016/08/04/git-rebase/" target="_blank" rel="noopener"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://blog.yangx.site/2016/08/04/git-rebase/&text=git rebase命令用法" target="_blank" rel="noopener"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://blog.yangx.site/2016/08/04/git-rebase/&title=git rebase命令用法" target="_blank" rel="noopener"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=git rebase命令用法&body=Check out this article: https://blog.yangx.site/2016/08/04/git-rebase/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        git rebase命令用法
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">YXiao's Blog</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2016-08-04T15:54:53.000Z" itemprop="datePublished">2016-08-04</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fas fa-archive"></i>
+        <a class="category-link" href="/categories/Git/">Git</a>
+    </div>
+
+
+      
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>假设你现在基于远程分支”origin”，创建一个叫”mywork”的分支。</p>
+<pre><code>$ git checkout -b mywork origin</code></pre><p><img src="/images/rebase0.png" alt="rebase0"></p>
+<p>现在我们在这个分支做一些修改，然后生成两个提交(commit)。</p>
+<pre><code>$ vim file.txt
+$ git commit
+$ vim otherfile.txt
+$ git commit
+...</code></pre><p>但是与此同时，有些人也在”origin”分支上做了一些修改并且做了提交了. 这就意味着”origin”和”mywork”这两个分支各自”前进”了，它们之间”分叉”了。</p>
+<p><img src="/images/rebase1.png" alt="rebase1"></p>
+<p>在这里，你可以用”pull”命令把”origin”分支上的修改拉下来并且和你的修改合并；结果看起来就像一个新的”合并的提交”(merge commit):</p>
+<p><img src="/images/rebase2.png" alt="rebase2"></p>
+<p>但是，如果你想让”mywork”分支历史看起来像没有经过任何合并一样，你也许可以用<a href="https://www.kernel.org/pub/software/scm/git/docs/git-rebase.html" target="_blank" rel="noopener">git rebase</a>:</p>
+<pre><code>$ git checkout new
+$ git rebase origin</code></pre><p>这些命令会把你的”mywork”分支里的每个提交(commit)取消掉，并且把它们临时 保存为补丁(patch)(这些补丁放到”.git/rebase”目录中),然后把”mywork”分支更新到最新的”origin”分支，最后把保存的这些补丁应用到”mywork”分支上。</p>
+<p><img src="/images/rebase3.png" alt="rebase3"></p>
+<p>当”mywork”分支更新之后，它会指向这些新创建的提交(commit),而那些老的提交会被丢弃。 如果运行垃圾收集命令(pruning garbage collection), 这些被丢弃的提交就会删除。</p>
+<p><img src="/images/rebase4.png" alt="rebase4"></p>
+<p><img src="/images/rebase5.png" alt="rebase5"></p>
+<p>在rebase的过程中，也许会出现冲突(conflict)。在这种情况，Git会停止rebase并会让你去解决 冲突；在解决完冲突后，用<code>git add</code>命令去更新这些内容的索引(index)，然后，你无需执行<code>git commit</code>，只要执行:</p>
+<pre><code>$ git rebase --continue</code></pre><p>这样git会继续应用(apply)余下的补丁。</p>
+<p>在任何时候，你可以用<code>--abort</code>参数来终止rebase的行动，并且”mywork” 分支会回到rebase开始前的状态。</p>
+<pre><code>$ git rebase --abort</code></pre>
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://blog.yangx.site/2016/08/04/git-rebase/" target="_blank" rel="noopener"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://blog.yangx.site/2016/08/04/git-rebase/&text=git rebase命令用法" target="_blank" rel="noopener"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://blog.yangx.site/2016/08/04/git-rebase/&title=git rebase命令用法" target="_blank" rel="noopener"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=git rebase命令用法&body=Check out this article: https://blog.yangx.site/2016/08/04/git-rebase/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2020 yxiao
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>

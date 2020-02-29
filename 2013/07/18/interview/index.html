@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Interview Java篇Java基础1、访问修饰符public,private,protected,以及不写（默认）时的区别？     修饰符 当前类 同 包 子 类 其他包    public √ √ √ √   protected √ √ √ ×   default √ √ × ×   private √ × × ×   类的成员不写访问修饰时默认为default。默认对于同一个包中的其">
+<meta property="og:type" content="article">
+<meta property="og:title" content="interview">
+<meta property="og:url" content="https://blog.yangx.site/2013/07/18/interview/index.html">
+<meta property="og:site_name" content="YXiao&#39;s Blog">
+<meta property="og:description" content="Interview Java篇Java基础1、访问修饰符public,private,protected,以及不写（默认）时的区别？     修饰符 当前类 同 包 子 类 其他包    public √ √ √ √   protected √ √ √ ×   default √ √ × ×   private √ × × ×   类的成员不写访问修饰时默认为default。默认对于同一个包中的其">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2013-07-18T14:35:50.000Z">
+<meta property="article:modified_time" content="2020-02-29T10:43:09.924Z">
+<meta property="article:author" content="yxiao">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>interview</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2016/03/22/linux-daemon-start/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://blog.yangx.site/2013/07/18/interview/" target="_blank" rel="noopener"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://blog.yangx.site/2013/07/18/interview/&text=interview" target="_blank" rel="noopener"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://blog.yangx.site/2013/07/18/interview/&title=interview" target="_blank" rel="noopener"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=interview&body=Check out this article: https://blog.yangx.site/2013/07/18/interview/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Java篇"><span class="toc-number">1.</span> <span class="toc-text">Java篇</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Java基础"><span class="toc-number">1.1.</span> <span class="toc-text">Java基础</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java集合"><span class="toc-number">1.2.</span> <span class="toc-text">Java集合</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#多线程"><span class="toc-number">1.3.</span> <span class="toc-text">多线程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM和GC"><span class="toc-number">1.4.</span> <span class="toc-text">JVM和GC</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Spring"><span class="toc-number">1.5.</span> <span class="toc-text">Spring</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#操作系统篇"><span class="toc-number">2.</span> <span class="toc-text">操作系统篇</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#计算机网络、HTTP"><span class="toc-number">3.</span> <span class="toc-text">计算机网络、HTTP</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Python篇"><span class="toc-number">4.</span> <span class="toc-text">Python篇</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#shell篇"><span class="toc-number">5.</span> <span class="toc-text">shell篇</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#分布式篇"><span class="toc-number">6.</span> <span class="toc-text">分布式篇</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        interview
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">YXiao's Blog</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2013-07-18T14:35:50.000Z" itemprop="datePublished">2013-07-18</time>
+        
+      
+    </div>
+
+
+      
+
+      
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>Interview</p>
+<h1 id="Java篇"><a href="#Java篇" class="headerlink" title="Java篇"></a>Java篇</h1><h2 id="Java基础"><a href="#Java基础" class="headerlink" title="Java基础"></a>Java基础</h2><p><strong>1、访问修饰符public,private,protected,以及不写（默认）时的区别？</strong> </p>
+<table>
+<thead>
+<tr>
+<th>修饰符</th>
+<th>当前类</th>
+<th>同 包</th>
+<th>子 类</th>
+<th>其他包</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>public</td>
+<td>√</td>
+<td>√</td>
+<td>√</td>
+<td>√</td>
+</tr>
+<tr>
+<td>protected</td>
+<td>√</td>
+<td>√</td>
+<td>√</td>
+<td>×</td>
+</tr>
+<tr>
+<td>default</td>
+<td>√</td>
+<td>√</td>
+<td>×</td>
+<td>×</td>
+</tr>
+<tr>
+<td>private</td>
+<td>√</td>
+<td>×</td>
+<td>×</td>
+<td>×</td>
+</tr>
+</tbody></table>
+<p>类的成员不写访问修饰时默认为default。默认对于同一个包中的其他类相当于公开（public），对于不是同一个包中的其他类相当于私有（private）。受保护（protected）对子类相当于公开，对不是同一包中的没有父子关系的类相当于私有。Java中，外部类的修饰符只能是public或默认，类的成员（包括内部类）的修饰符可以是以上四种。</p>
+<p><strong>2、int和Integer有什么区别？自动装箱/拆箱机制？</strong><br>Java是一个近乎纯洁的面向对象编程语言，但是为了编程的方便还是引入了基本数据类型，但是为了能够将这些基本数据类型当成对象操作，Java为每一个基本数据类型都引入了对应的包装类型（wrapper class），int的包装类就是Integer，从Java 5开始引入了自动装箱/拆箱机制，使得二者可以相互转换。<br>Java 为每个原始类型提供了包装类型： </p>
+<ul>
+<li>原始类型: boolean，char，byte，short，int，long，float，double </li>
+<li>包装类型：Boolean，Character，Byte，Short，Integer，Long，Float，Double</li>
+</ul>
+<p><strong>3、String和StringBuilder、StringBuffer的区别？</strong><br>Java平台提供了两种类型的字符串：String和StringBuffer/StringBuilder，它们可以储存和操作字符串。其中String是只读字符串，也就意味着String引用的字符串内容是不能被改变的。而StringBuffer/StringBuilder类表示的字符串对象可以直接进行修改。StringBuilder是Java 5中引入的，它和StringBuffer的方法完全相同，区别在于它是在单线程环境下使用的，因为它的所有方面都没有被synchronized修饰，因此它的效率也比StringBuffer要高。</p>
+<p><strong>4、抽象类（abstract class）和接口（interface）有什么异同？</strong><br>抽象类和接口都不能够实例化，但可以定义抽象类和接口类型的引用。一个类如果继承了某个抽象类或者实现了某个接口都需要对其中的抽象方法全部进行实现，否则该类仍然需要被声明为抽象类。接口比抽象类更加抽象，因为抽象类中可以定义构造器，可以有抽象方法和具体方法，而接口中不能定义构造器而且其中的方法全部都是抽象方法。抽象类中的成员可以是private、默认、protected、public的，而接口中的成员全都是public的。抽象类中可以定义成员变量，而接口中定义的成员变量实际上都是常量。有抽象方法的类必须被声明为抽象类，而抽象类未必要有抽象方法。</p>
+<p><strong>5、Java 中的final关键字有哪些用法？final、finalize、finally？</strong><br>(1)修饰类：表示该类不能被继承；(2)修饰方法：表示方法不能被重写；(3)修饰变量：表示变量只能一次赋值以后值不能被修改（常量）。</p>
+<ul>
+<li>final：修饰符（关键字）有三种用法：如果一个类被声明为final，意味着它不能再派生出新的子类，即不能被继承，因此它和abstract是反义词。将变量声明为final，可以保证它们在使用中不被改变，被声明为final的变量必须在声明时给定初值，而在以后的引用中只能读取不可修改。被声明为final的方法也同样只能使用，不能在子类中被重写。 </li>
+<li>finally：通常放在try…catch…的后面构造总是执行代码块，这就意味着程序无论正常执行还是发生异常，这里的代码只要JVM不关闭都能执行，可以将释放外部资源的代码写在finally块中。 </li>
+<li>finalize：Object类中定义的方法，Java中允许使用finalize()方法在垃圾收集器将对象从内存中清除出去之前做必要的清理工作。这个方法是由垃圾收集器在销毁对象时调用的，通过重写finalize()方法可以整理系统资源或者执行其他清理工作。</li>
+</ul>
+<p><strong>6、如何实现序列化？了解过Protobuf吗？是怎么工作的？</strong><br>序列化就是一种用来处理对象流的机制，所谓对象流也就是将对象的内容进行流化。可以对流化后的对象进行读写操作，也可将流化后的对象传输于网络之间。序列化是为了解决对象流读写操作时可能引发的问题（如果不进行序列化可能会存在数据乱序的问题）。<br>要实现序列化，需要让一个类实现Serializable接口，该接口是一个标识性接口，标注该类对象是可被序列化的，然后使用一个输出流来构造一个对象输出流并通过writeObject(Object)方法就可以将实现对象写出（即保存其状态）；如果需要反序列化则可以用一个输入流建立对象输入流，然后通过readObject方法从流中读取对象。序列化除了能够实现对象的持久化之外，还能够用于对象的深度克隆</p>
+<h2 id="Java集合"><a href="#Java集合" class="headerlink" title="Java集合"></a>Java集合</h2><p><strong>1、ArrayList和LinkedList有什么区别？</strong></p>
+<ol>
+<li>顺序插入速度ArrayList会比较快，因为ArrayList是基于数组实现的，数组是事先new好的，只要往指定位置塞一个数据就好了；LinkedList则不同，每次顺序插入的时候LinkedList将new一个对象出来，如果对象比较大，那么new的时间势必会长一点，再加上一些引用赋值的操作，所以顺序插入LinkedList必然慢于ArrayList。</li>
+<li>基于上一点，因为LinkedList里面不仅维护了待插入的元素，还维护了Node的前置Node和后继Node，如果一个LinkedList中的Node非常多，那么LinkedList将比ArrayList更耗费一些内存。</li>
+<li>使用各自遍历效率最高的方式，ArrayList的遍历效率会比LinkedList的遍历效率高一些。</li>
+</ol>
+<p><strong>2、ArrayList做删除的时候，会遇到什么异常？如何避免？</strong><br>会有ConcurrentModificationException，使用Iterator的remove方法或者使用并发集合类如CopyOnWriteArrayList。</p>
+<p><strong>3、HashMap是怎么工作的？结构是什么？它是线程安全的吗？</strong><br>HashMap在Map.Entry静态内部类实现中存储key-value对。HashMap使用哈希算法，在put和get方法中，它使用hashCode()和equals()方法。当我们通过传递key-value对调用put方法的时候，HashMap使用Key hashCode()和哈希算法来找出存储key-value对的索引。Entry存储在LinkedList中，所以如果存在entry，它使用equals()方法来检查传递的key是否已经存在，如果存在，它会覆盖value，如果不存在，它会创建一个新的entry然后保存。当我们通过传递key调用get方法时，它再次使用hashCode()来找到数组中的索引，然后使用equals()方法找出正确的Entry，然后返回它的值。</p>
+<p><strong>4、ConcurrentHashMap是怎么工作的？结构是什么？</strong><br>谈谈ConcurrentHashMap实现原理</p>
+<p>我：@＃¥@@基于分段锁的％％¥＃@＃¥，但是1.8之后改变实现方式了</p>
+<p>面试官：1.8啥方式</p>
+<p>我：把1.8的实现原理说了一通，其中提到了红黑树…</p>
+<p>面试官：能讲下红黑树的概念吗</p>
+<ol>
+<li>每个节点都只能是红色或者黑色</li>
+<li>根节点是黑色</li>
+<li>每个叶节点（NIL节点，空节点）是黑色的</li>
+<li>如果一个结点是红的，则它两个子节点都是黑的。也就是说在一条路径上不能出现相邻的两个红色结点</li>
+<li>从任一节点到其每个叶子的所有路径都包含相同数目的黑色节点</li>
+</ol>
+<p>我：红黑树是一种二叉树，并且是平衡……％……¥……，</p>
+<p>面试官：能讲下红黑树的。。。。。</p>
+<p>我：打住，别问了，红黑树我只知道他是二叉树，比其他树多一个属性，其他的我都不知道<br>面试官：好的，那换个，你知道它的size方法是如何实现的么？</p>
+<p>我：size方法？是想要得到Map中的元素个数么？</p>
+<p>面试官：对的….</p>
+<p>我：我记得好像size方法返回是不准确的，平时也不会用到这个方法…</p>
+<p>面试官：如果你觉得size方法返回值不准确，那如果让你自己实现，你觉得应该怎么实现呢？</p>
+<p>我：…@＃¥@@…两眼一黑</p>
+<p>我：等等，让我想想…..应该可以用AtomicInteger变量进行记录…嗯，对的，每次插入或删除的时候，操作这个变量，我得意的一笑…</p>
+<p>面试官：哦，是么，那如果我觉得这个AtomicInteger这个变量性能不好，还能再优化么？</p>
+<p>我：懵逼脸…（当时居然把volitile变量给忘记了）…好像没有了，我想不出来了…</p>
+<p>面试官：哦，那回头你再看看源码吧，jdk中已经实现了…</p>
+<p><strong>5、我们能否使用任何类作为Map的key？</strong><br>要重写equals()和hashCode()方法。</p>
+<p><strong>6、HashMap和HashTable有什么不同？</strong></p>
+<ul>
+<li>实现：HashMap继承的类是AbstractMap类，而Hashtable继承的是Dictionary类，而Dictionary是一个过时的类，因此通常情况下建议使用HashMap而不是使用Hashtable。</li>
+<li>内部结构：其实HashMap与Hashtable内部基本都是使用数组-链表的结构，但是HashMap引入了红黑树的实现，内部相对来说更加复杂而性能相对来说应该更好。</li>
+<li>null值控制：通过前面的介绍我们知道Hashtable是不允许key-value为null值的，Hashtable对于key-value为空的情况下将抛出NullPointerException，而HashMap则是允许key-value为null的，HashMap会将key=null方法index=0的位置。</li>
+<li>线程安全：通过阅读源码可以发现Hashtable的方法中基本上都是有synchronized关键字修饰的，但是HashMap是线程不安全的，故对于单线程的情况下来说HashMap的性能更优于Hashtable，单线程场景下建议使用HashMap。</li>
+</ul>
+<h2 id="多线程"><a href="#多线程" class="headerlink" title="多线程"></a>多线程</h2><p><strong>1、说说创建线程的几种方法？Runnable和Callable有啥区别？</strong><br>继承Thread、实现Runnable、实现Callable、线程池。</p>
+<p><strong>2、线程池启动和工作流程？</strong></p>
+<ol>
+<li>首先线程池判断核心线程池是否已满？没满，创建一个工作线程来执行任务。满了，则进入下个流程。</li>
+<li>其次线程池判断工作队列是否已满？没满，则将新提交的任务存储在工作队列里。满了，则进入下个流程。</li>
+<li>最后线程池判断整个线程池是否已满？没满，则创建一个新的工作线程来执行任务，满了，则交给饱和策略来处理这个任务。</li>
+</ol>
+<p><strong>3、Thread类的sleep()方法和对象的wait()方法都可以让线程暂停执行，它们有什么区别? **<br>**sleep()方法</strong>（休眠）是线程类（Thread）的静态方法，调用此方法会让当前线程暂停执行指定的时间，<strong>将执行机会（CPU）让给其他线程，但是对象的锁依然保持</strong>，因此休眠时间结束后会自动恢复（线程回到就绪状态，请参考第66题中的线程状态转换图）。<strong>wait()</strong>是Object类的方法，调用对象的wait()方法导致当前线程<strong>放弃对象的锁</strong>（线程暂停执行），进入对象的等待池（wait pool），只有调用对象的notify()方法（或notifyAll()方法）时才能唤醒等待池中的线程进入等锁池（lock pool），如果线程重新获得对象的锁就可以进入就绪状态。 —— 都回到就绪状态。</p>
+<p><strong>4、如何在两个线程之间共享数据？</strong><br>通过在线程之间共享对象就可以了，然后通过wait/notify/notifyAll、await/signal/signalAll进行唤起和等待，比方说阻塞队列BlockingQueue就是为线程之间共享数据而设计的。</p>
+<p><strong>5、ReadWriteLock是什么？</strong><br>ReentrantLock的局限：</p>
+<p>如果使用ReentrantLock是为了防止线程A在写数据、线程B在读数据造成的数据不一致。那么如果线程C在读数据，线程D也在读数据，读数据是不会改变数据的，那就没有必要加锁，但是ReentrantLock还是加锁了，这很显然降低了程序的性能。因此读写锁ReadWriteLock应运而生。</p>
+<p>它是一个读写锁接口，ReentrantReadWriteLock是ReadWriteLock接口的一个具体实现，实现了读写的分离：</p>
+<p>读锁是共享的，写锁是独占的，读和读之间不会互斥，读和写、写和读、写和写之间才会互斥，提升了读写的性能。</p>
+<h2 id="JVM和GC"><a href="#JVM和GC" class="headerlink" title="JVM和GC"></a>JVM和GC</h2><p>*<em>1、描述一下JVM加载class文件的原理机制？ *</em><br>JVM中类的装载是由类加载器（ClassLoader）和它的子类来实现的，Java中的类加载器是一个重要的Java运行时系统组件，它负责在运行时查找和装入类文件中的类。<br>由于Java的跨平台性，经过编译的Java源程序并不是一个可执行程序，而是一个或多个类文件。当Java程序需要使用某个类时，JVM会确保这个类已经被加载、连接（验证、准备和解析）和初始化。类的加载是指把类的.class文件中的数据读入到内存中，通常是创建一个字节数组读入.class文件，然后产生与所加载类对应的Class对象。加载完成后，Class对象还不完整，所以此时的类还不可用。当类被加载后就进入连接阶段，这一阶段包括验证、准备（为静态变量分配内存并设置默认的初始值）和解析（将符号引用替换为直接引用）三个步骤。最后JVM对类进行初始化，包括：1)如果类存在直接的父类并且这个类还没有被初始化，那么就先初始化父类；2)如果类中存在初始化语句，就依次执行这些初始化语句。<br>类的加载是由类加载器完成的，类加载器包括：根加载器（BootStrap）、扩展加载器（Extension）、系统加载器（System）和用户自定义类加载器（java.lang.ClassLoader的子类）。从Java 2（JDK 1.2）开始，类加载过程采取了父亲委托机制（PDM）。PDM更好的保证了Java平台的安全性，在该机制中，JVM自带的Bootstrap是根加载器，其他的加载器都有且仅有一个父类加载器。类的加载首先请求父类加载器加载，父类加载器无能为力时才由其子类加载器自行加载。JVM不会向Java程序提供对Bootstrap的引用。下面是关于几个类加载器的说明：</p>
+<ul>
+<li>Bootstrap：一般用本地代码实现，负责加载JVM基础核心类库（rt.jar）；</li>
+<li>Extension：从java.ext.dirs系统属性所指定的目录中加载类库，它的父加载器是Bootstrap；</li>
+<li>System：又叫应用类加载器，其父类是Extension。它是应用最广泛的类加载器。它从环境变量classpath或者系统属性java.class.path所指定的目录中记载类，是用户自定义加载器的默认父加载器。</li>
+</ul>
+<p><strong>2、Java GC发生在什么时候？做了什么事？</strong><br>当Eden区满的时候 GC执行，这时会将 Eden 区和 From 区中还被引用的对象会被移到 To区 ，个别大对象和部分From对象在To已满的情况下会被放到Old区。</p>
+<p>之所以要分两个Survivor，而不是直接从Survivor直接移到old区域，原因是old区域内的对象都是经过若干次yong GC之后存活下来的对象，并不是每一次yong GC存活下来的对象都需要移动到old区域内，所以需要Survivor1和Survivor2来保证Yong内存中的复制算法的实行，提高清除效率。</p>
+<p><strong>3、如何判断对象可以被回收？</strong><br>判断对象是否存活一般有两种方式：</p>
+<ul>
+<li>引用计数：每个对象有一个引用计数属性，新增一个引用时计数加1，引用释放时计数减1，计数为0时可以回收。此方法简单，无法解决对象相互循环引用的问题。</li>
+<li>可达性分析（Reachability Analysis）：从GC Roots开始向下搜索，搜索所走过的路径称为引用链。当一个对象到GC Roots没有任何引用链相连时，则证明此对象是不可用的，不可达对象。</li>
+</ul>
+<p><strong>4、Minor GC与Full GC分别在什么时候发生？</strong><br>新生代内存不够用时候发生MGC也叫YGC，JVM内存不够的时候发生FGC。</p>
+<h2 id="Spring"><a href="#Spring" class="headerlink" title="Spring"></a>Spring</h2><p><strong>1、Spring Bean的生命周期是怎样的？</strong><br>当一个 bean 被实例化时，它可能需要执行一些初始化使它转换成可用状态。同样，当 bean 不再需要，并且从容器中移除时，可能需要做一些清除工作。</p>
+<p>尽管还有一些在 Bean 实例化和销毁之间发生的活动，但是本章将只讨论两个重要的生命周期回调方法，它们在 bean 的初始化和销毁的时候是必需的。</p>
+<p>为了定义安装和拆卸一个 bean，我们只要声明带有 init-method 和/或 destroy-method 参数的 。init-method 属性指定一个方法，在实例化 bean 时，立即调用该方法。同样，destroy-method 指定一个方法，只有从容器中移除 bean 之后，才能调用该方法。</p>
+<p><strong>2、AOP？</strong></p>
+<h1 id="操作系统篇"><a href="#操作系统篇" class="headerlink" title="操作系统篇"></a>操作系统篇</h1><p><strong>1、进程有哪几种状态？</strong></p>
+<ul>
+<li>就绪状态：进程已获得除处理机以外的所需资源，等待分配处理机资源</li>
+<li>运行状态：占用处理机资源运行，处于此状态的进程数小于等于CPU数</li>
+<li>阻塞状态： 进程等待某种条件，在条件满足之前无法执行 </li>
+</ul>
+<p><strong>2、进程的通信方式有哪些？</strong></p>
+<p>主要分为：管道、系统IPC（包括消息队列、信号量、共享存储）、SOCKET</p>
+<p>管道主要分为：普通管道PIPE 、流管道（s_pipe）、命名管道（name_pipe）</p>
+<p>管道是一种半双工的通信方式，数据只能单项流动，并且只能在具有亲缘关系的进程间流动，进程的亲缘关系通常是父子进程<br>命名管道也是半双工的通信方式，它允许无亲缘关系的进程间进行通信<br>信号量是一个计数器，用来控制多个进程对资源的访问，它通常作为一种锁机制。<br>消息队列是消息的链表，存放在内核中并由消息队列标识符标识。<br>信号是一种比较复杂的通信方式，用于通知接收进程某个事件已经发生。<br>共享内存就是映射一段能被其它进程访问的内存，这段共享内存由一个进程创建，但是多个进程可以访问。</p>
+<h1 id="计算机网络、HTTP"><a href="#计算机网络、HTTP" class="headerlink" title="计算机网络、HTTP"></a>计算机网络、HTTP</h1><p><strong>1、TCP 3次握手的过程，为啥不是2次？4次？</strong><br>略</p>
+<p><strong>2、HTTP状态码？</strong><br>略</p>
+<p><strong>3、GET和POST的区别？</strong><br>从原理性看：</p>
+<p>根据HTTP规范，GET用于信息获取，而且应该是安全和幂等的<br>根据HTTP规范，POST请求表示可能修改服务器上资源的请求</p>
+<p>从表面上看：</p>
+<p>GET请求的数据会附在URL后面，POST的数据放在HTTP包体<br>POST安全性比GET安全性高</p>
+<h1 id="Python篇"><a href="#Python篇" class="headerlink" title="Python篇"></a>Python篇</h1><p><strong>1、range和xrange的区别？</strong><br>range([start,] stop[, step])，根据start与stop指定的范围以及step设定的步长，生成一个序列。</p>
+<p>xrange用法与range完全相同，所不同的是生成的不是一个数组，而是一个生成器。</p>
+<p>要生成很大的数字序列的时候，用xrange会比range性能优很多，因为不需要一上来就开辟一块很大的内存空间。xrange做循环的性能比range好，尤其是返回很大的时候，尽量用xrange吧，除非你是要返回一个列表。</p>
+<p><strong>2、什么是GIL？</strong><br>简单地说就是:<br>每一个interpreter进程,只能同时仅有一个线程来执行, 获得相关的锁, 存取相关的资源.<br>那么很容易就会发现,如果一个interpreter进程只能有一个线程来执行,<br>多线程的并发则成为不可能, 即使这几个线程之间不存在资源的竞争.<br>从理论上讲,我们要尽可能地使程序更加并行, 能够充分利用多核的功能.</p>
+<p><strong>3、有什么办法绕过GIL吗？multiProcessing和Thread各适用那种场景？</strong><br>Python多线程在IO密集型任务中还是很有用处的，而对于计算密集型任务，应该使用Python多进程。</p>
+<h1 id="shell篇"><a href="#shell篇" class="headerlink" title="shell篇"></a>shell篇</h1><p><strong>1、查找文件命令？</strong></p>
+<p><strong>2、查看端口？</strong></p>
+<h1 id="分布式篇"><a href="#分布式篇" class="headerlink" title="分布式篇"></a>分布式篇</h1><p><strong>1、知道RPC/RMI吗？说说工作原理？</strong><br>RMI（Remote Method Invocation，远程方法调用）是用Java在JDK1.1中实现的，它大大增强了Java开发分布式应用的能力。Java作为一种风靡一时的网络开发语言，其巨大的威力就体现在它强大的开发分布式网络应用的能力上，而RMI就是开发百分之百纯Java的网络分布式应用系统的核心解决方案之一。其实它可以被看作是RPC的Java版本。但是传统RPC并不能很好地应用于分布式对象系统。而Java RMI 则支持存储于不同地址空间的程序级对象之间彼此进行通信，实现远程对象之间的无缝远程调用。</p>
+<p><strong>2、BloomFilter原理？</strong></p>
+<p><strong>3、知道LSM tree吗？分布式系统容灾设计？</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> List&lt;List&lt;Integer&gt;&gt; threeSum(<span class="keyword">int</span>[] nums) &#123;</span><br><span class="line">        List&lt;List&lt;Integer&gt;&gt; res = <span class="keyword">new</span> ArrayList&lt;List&lt;Integer&gt;&gt;();</span><br><span class="line">        <span class="keyword">int</span> len=nums.length;</span><br><span class="line">        <span class="keyword">if</span>(len&lt;<span class="number">3</span>)<span class="keyword">return</span> res;</span><br><span class="line">        Arrays.sort(nums);</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;len;i++)&#123;</span><br><span class="line">            <span class="keyword">if</span>(nums[i]&gt;<span class="number">0</span>)<span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">if</span>(i&gt;<span class="number">0</span> &amp;&amp; nums[i]==nums[i-<span class="number">1</span>])<span class="keyword">continue</span>;</span><br><span class="line">            <span class="keyword">int</span> begin=i+<span class="number">1</span>,end=len-<span class="number">1</span>;</span><br><span class="line">            <span class="keyword">while</span>(begin&lt;end)&#123;</span><br><span class="line">                <span class="keyword">int</span> sum=nums[i]+nums[begin]+nums[end];</span><br><span class="line">                <span class="keyword">if</span>(sum==<span class="number">0</span>)&#123;</span><br><span class="line">                    List&lt;Integer&gt; list = <span class="keyword">new</span> ArrayList&lt;Integer&gt;();</span><br><span class="line">                    list.add(nums[i]);list.add(nums[begin]);list.add(nums[end]);</span><br><span class="line">                    res.add(list);</span><br><span class="line">                    begin++;end--;</span><br><span class="line">                    <span class="keyword">while</span>(begin&lt;end &amp;&amp; nums[begin]==nums[begin-<span class="number">1</span>])begin++;</span><br><span class="line">                    <span class="keyword">while</span>(begin&lt;end &amp;&amp; nums[end]==nums[end+<span class="number">1</span>])end--;</span><br><span class="line">                &#125;<span class="keyword">else</span> <span class="keyword">if</span>(sum&gt;<span class="number">0</span>)end--;</span><br><span class="line">                <span class="keyword">else</span> begin++;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> res;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Java篇"><span class="toc-number">1.</span> <span class="toc-text">Java篇</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Java基础"><span class="toc-number">1.1.</span> <span class="toc-text">Java基础</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java集合"><span class="toc-number">1.2.</span> <span class="toc-text">Java集合</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#多线程"><span class="toc-number">1.3.</span> <span class="toc-text">多线程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM和GC"><span class="toc-number">1.4.</span> <span class="toc-text">JVM和GC</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Spring"><span class="toc-number">1.5.</span> <span class="toc-text">Spring</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#操作系统篇"><span class="toc-number">2.</span> <span class="toc-text">操作系统篇</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#计算机网络、HTTP"><span class="toc-number">3.</span> <span class="toc-text">计算机网络、HTTP</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Python篇"><span class="toc-number">4.</span> <span class="toc-text">Python篇</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#shell篇"><span class="toc-number">5.</span> <span class="toc-text">shell篇</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#分布式篇"><span class="toc-number">6.</span> <span class="toc-text">分布式篇</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://blog.yangx.site/2013/07/18/interview/" target="_blank" rel="noopener"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://blog.yangx.site/2013/07/18/interview/&text=interview" target="_blank" rel="noopener"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://blog.yangx.site/2013/07/18/interview/&title=interview" target="_blank" rel="noopener"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=interview&body=Check out this article: https://blog.yangx.site/2013/07/18/interview/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2020 yxiao
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>

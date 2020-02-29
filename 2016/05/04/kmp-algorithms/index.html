@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="字符串匹配是计算机的基本任务之一。 朴素的模式匹配算法算法思想举例来说，有一个字符串”BBC ABCDAB ABCDABCDABDE”，我想知道，里面是否包含另一个字符串”ABCDABD”？ BBC ABCDAB ABCDABCDABDE x ABCDABD首先，字符串”BBC ABCDAB ABCDABCDABDE”的第一个字符与搜索词”ABCDABD”的第一个字符，进行比较。因为B与A不匹配，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="字符串匹配KMP算法">
+<meta property="og:url" content="https://blog.yangx.site/2016/05/04/kmp-algorithms/index.html">
+<meta property="og:site_name" content="YXiao&#39;s Blog">
+<meta property="og:description" content="字符串匹配是计算机的基本任务之一。 朴素的模式匹配算法算法思想举例来说，有一个字符串”BBC ABCDAB ABCDABCDABDE”，我想知道，里面是否包含另一个字符串”ABCDABD”？ BBC ABCDAB ABCDABCDABDE x ABCDABD首先，字符串”BBC ABCDAB ABCDABCDABDE”的第一个字符与搜索词”ABCDABD”的第一个字符，进行比较。因为B与A不匹配，">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2016-05-04T03:34:16.000Z">
+<meta property="article:modified_time" content="2020-02-29T10:50:43.562Z">
+<meta property="article:author" content="yxiao">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>字符串匹配KMP算法</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2016/05/05/dp-intro/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2016/04/21/hash-algorithms/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://blog.yangx.site/2016/05/04/kmp-algorithms/" target="_blank" rel="noopener"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://blog.yangx.site/2016/05/04/kmp-algorithms/&text=字符串匹配KMP算法" target="_blank" rel="noopener"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://blog.yangx.site/2016/05/04/kmp-algorithms/&title=字符串匹配KMP算法" target="_blank" rel="noopener"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=字符串匹配KMP算法&body=Check out this article: https://blog.yangx.site/2016/05/04/kmp-algorithms/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#朴素的模式匹配算法"><span class="toc-number">1.</span> <span class="toc-text">朴素的模式匹配算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#算法思想"><span class="toc-number">1.1.</span> <span class="toc-text">算法思想</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ruby代码实现"><span class="toc-number">1.2.</span> <span class="toc-text">ruby代码实现</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#KMP算法"><span class="toc-number">2.</span> <span class="toc-text">KMP算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#算法思想-1"><span class="toc-number">2.1.</span> <span class="toc-text">算法思想</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#部分匹配表"><span class="toc-number">2.2.</span> <span class="toc-text">部分匹配表</span></a></li></ol></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        字符串匹配KMP算法
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">YXiao's Blog</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2016-05-04T03:34:16.000Z" itemprop="datePublished">2016-05-04</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fas fa-archive"></i>
+        <a class="category-link" href="/categories/Algorithms/">Algorithms</a>
+    </div>
+
+
+      
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>字符串匹配是计算机的基本任务之一。</p>
+<h2 id="朴素的模式匹配算法"><a href="#朴素的模式匹配算法" class="headerlink" title="朴素的模式匹配算法"></a>朴素的模式匹配算法</h2><h3 id="算法思想"><a href="#算法思想" class="headerlink" title="算法思想"></a>算法思想</h3><p>举例来说，有一个字符串”BBC ABCDAB ABCDABCDABDE”，我想知道，里面是否包含另一个字符串”ABCDABD”？</p>
+<pre><code>BBC ABCDAB ABCDABCDABDE
+x
+ABCDABD</code></pre><p>首先，字符串”BBC ABCDAB ABCDABCDABDE”的第一个字符与搜索词”ABCDABD”的第一个字符，进行比较。因为B与A不匹配，所以搜索词后移一位。</p>
+<pre><code>BBC ABCDAB ABCDABCDABDE
+ x
+ ABCDABD</code></pre><p>因为B与A不匹配，搜索词再往后移。</p>
+<pre><code>BBC ABCDAB ABCDABCDABDE
+    |
+    ABCDABD</code></pre><p>就这样，直到字符串有一个字符，与搜索词的第一个字符相同为止。</p>
+<pre><code>BBC ABCDAB ABCDABCDABDE
+    ||
+    ABCDABD</code></pre><p>接着比较字符串和搜索词的下一个字符，还是相同。</p>
+<pre><code>BBC ABCDAB ABCDABCDABDE
+    ||||||x
+    ABCDABD</code></pre><p>直到字符串有一个字符，与搜索词对应的字符不相同为止。</p>
+<pre><code>BBC ABCDAB ABCDABCDABDE
+     x
+     ABCDABD</code></pre><p>这时，最自然的反应是，将搜索词整个后移一位，再从头逐个比较。这样做虽然可行，但是效率很差，因为你要把”搜索位置”移到已经比较过的位置，重比一遍。</p>
+<h3 id="ruby代码实现"><a href="#ruby代码实现" class="headerlink" title="ruby代码实现"></a>ruby代码实现</h3><figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">index</span><span class="params">(s, t)</span></span></span><br><span class="line">  i, j = <span class="number">0</span>, <span class="number">0</span></span><br><span class="line">  <span class="keyword">while</span> i &lt; s.size &amp;&amp; j &lt; t.size</span><br><span class="line">    <span class="keyword">if</span> s[i] == t[j]      <span class="comment"># 两字母相等则继续</span></span><br><span class="line">      i, j = i + <span class="number">1</span>, j + <span class="number">1</span></span><br><span class="line">    <span class="keyword">else</span>       <span class="comment"># 指针后退重新开始匹配</span></span><br><span class="line">      i = i - j + <span class="number">1</span>    <span class="comment"># i退回到上次匹配首位的下一位</span></span><br><span class="line">      j = <span class="number">0</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line">  <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> j == t.size</span><br><span class="line">    <span class="keyword">return</span> i - j</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">    <span class="keyword">return</span> -<span class="number">1</span></span><br><span class="line">  <span class="keyword">end</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="KMP算法"><a href="#KMP算法" class="headerlink" title="KMP算法"></a>KMP算法</h2><h3 id="算法思想-1"><a href="#算法思想-1" class="headerlink" title="算法思想"></a>算法思想</h3><p>我们基于上面的阐述，继续来看这个字符串匹配问题。</p>
+<pre><code>BBC ABCDAB ABCDABCDABDE
+    ||||||x
+    ABCDABD</code></pre><p>一个基本事实是，当空格与D不匹配时，你其实知道前面六个字符是”ABCDAB”。KMP算法的想法是，设法利用这个已知信息，不要把”搜索位置”移回已经比较过的位置，继续把它向后移，这样就提高了效率。</p>
+<table>
+<thead>
+<tr>
+<th>搜索词</th>
+<th>A</th>
+<th>B</th>
+<th>C</th>
+<th>D</th>
+<th>A</th>
+<th>B</th>
+<th>D</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>部分匹配值</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>2</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<p>怎么做到这一点呢？可以针对搜索词，算出一张《部分匹配表》（Partial Match Table）。这张表是如何产生的，后面再介绍，这里只要会用就可以了</p>
+<pre><code>BBC ABCDAB ABCDABCDABDE
+    ||||||x
+    ABCDABD</code></pre><p>已知空格与D不匹配时，前面六个字符”ABCDAB”是匹配的。查表可知，最后一个匹配字符B对应的”部分匹配值”为2，因此按照下面的公式算出向后移动的位数：</p>
+<pre><code>移动位数 = 已匹配的字符数 - 对应的部分匹配值</code></pre><p>因为 6 - 2 等于4，所以将搜索词向后移动4位。</p>
+<pre><code>BBC ABCDAB ABCDABCDABDE
+        ||x
+        ABCDABD</code></pre><p>因为空格与Ｃ不匹配，搜索词还要继续往后移。这时，已匹配的字符数为2（”AB”），对应的”部分匹配值”为0。所以，移动位数 = 2 - 0，结果为 2，于是将搜索词向后移2位。</p>
+<pre><code>BBC ABCDAB ABCDABCDABDE
+          x
+          ABCDABD</code></pre><p>因为空格与A不匹配，继续后移一位。</p>
+<pre><code>BBC ABCDAB ABCDABCDABDE
+           ||||||x
+           ABCDABD</code></pre><p>逐位比较，直到发现C与D不匹配。于是，移动位数 = 6 - 2，继续将搜索词向后移动4位。</p>
+<pre><code>BBC ABCDAB ABCDABCDABDE
+               |||||||
+               ABCDABD</code></pre><p>逐位比较，直到搜索词的最后一位，发现完全匹配，于是搜索完成。如果还要继续搜索（即找出全部匹配），移动位数 = 7 - 0，再将搜索词向后移动7位，这里就不再重复了。</p>
+<h3 id="部分匹配表"><a href="#部分匹配表" class="headerlink" title="部分匹配表"></a>部分匹配表</h3><p>下面介绍《部分匹配表》是如何产生的。<br>首先，要了解两个概念：”前缀”和”后缀”。 “前缀”指除了最后一个字符以外，一个字符串的全部头部组合；”后缀”指除了第一个字符以外，一个字符串的全部尾部组合。</p>
+<pre><code>字符串：&quot;bread&quot;
+前缀：b, br, bre, brea
+后缀：read, ead, ad, d</code></pre><table>
+<thead>
+<tr>
+<th>搜索词</th>
+<th>A</th>
+<th>B</th>
+<th>C</th>
+<th>D</th>
+<th>A</th>
+<th>B</th>
+<th>D</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>部分匹配值</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>2</td>
+<td>0</td>
+</tr>
+<tr>
+<td>“部分匹配值”就是”前缀”和”后缀”的最长的共有元素的长度。以”ABCDABD”为例：</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<ul>
+<li>“A”的前缀和后缀都为空集，共有元素的长度为0；</li>
+<li>“AB”的前缀为[A]，后缀为[B]，共有元素的长度为0；</li>
+<li>“ABC”的前缀为[A, AB]，后缀为[BC, C]，共有元素的长度0；</li>
+<li>“ABCD”的前缀为[A, AB, ABC]，后缀为[BCD, CD, D]，共有元素的长度为0；</li>
+<li>“ABCDA”的前缀为[A, AB, ABC, ABCD]，后缀为[BCDA, CDA, DA, A]，共有元素为”A”，长度为1；</li>
+<li>“ABCDAB”的前缀为[A, AB, ABC, ABCD, ABCDA]，后缀为[BCDAB, CDAB, DAB, AB, B]，共有元素为”AB”，长度为2；</li>
+<li>“ABCDABD”的前缀为[A, AB, ABC, ABCD, ABCDA, ABCDAB]，后缀为[BCDABD, CDABD, DABD, ABD, BD, D]，共有元素的长度为0。</li>
+</ul>
+<pre><code>BBC ABCDAB ABCDABCDABDE
+           ||||||x
+           ABCDABD</code></pre><p>“部分匹配”的实质是，有时候，字符串头部和尾部会有重复。比如，”ABCDAB”之中有两个”AB”，那么它的”部分匹配值”就是2（”AB”的长度）。搜索词移动的时候，第一个”AB”向后移动4位（字符串长度-部分匹配值），就可以来到第二个”AB”的位置。</p>
+<p>Python实现代码如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">pmt</span><span class="params">(s)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    PartialMatchTable</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    prefix = [s[:i+<span class="number">1</span>] <span class="keyword">for</span> i <span class="keyword">in</span> range(len(s) - <span class="number">1</span>)]</span><br><span class="line">    postfix = [s[i+<span class="number">1</span>:] <span class="keyword">for</span> i <span class="keyword">in</span> range(len(s) - <span class="number">1</span>)]</span><br><span class="line">    intersection = list(set(prefix) &amp; set(postfix))</span><br><span class="line">    <span class="keyword">if</span> intersection:</span><br><span class="line">        <span class="keyword">return</span> len(intersection[<span class="number">0</span>])</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">kmp</span><span class="params">(s, target)</span>:</span></span><br><span class="line">    i = <span class="number">0</span></span><br><span class="line">    <span class="keyword">while</span> i &lt; len(s) - len(target) + <span class="number">1</span>:</span><br><span class="line">        match = <span class="literal">True</span></span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> range(len(target)):</span><br><span class="line">            <span class="keyword">if</span> s[i + j] != target[j]:</span><br><span class="line">                match = <span class="literal">False</span></span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">if</span> match:</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">        <span class="comment"># 移动位数 = 已匹配的字符数 - 对应的部分匹配值</span></span><br><span class="line">        <span class="keyword">if</span> j:</span><br><span class="line">            i += j - pmt(target[:j])</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            i += <span class="number">1</span></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">False</span></span><br></pre></td></tr></table></figure>
+
+<p>注：参考阮一峰老师<a href="http://www.ruanyifeng.com/blog/2013/05/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm.html" target="_blank" rel="noopener">《字符串匹配KMP算法》</a></p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#朴素的模式匹配算法"><span class="toc-number">1.</span> <span class="toc-text">朴素的模式匹配算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#算法思想"><span class="toc-number">1.1.</span> <span class="toc-text">算法思想</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ruby代码实现"><span class="toc-number">1.2.</span> <span class="toc-text">ruby代码实现</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#KMP算法"><span class="toc-number">2.</span> <span class="toc-text">KMP算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#算法思想-1"><span class="toc-number">2.1.</span> <span class="toc-text">算法思想</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#部分匹配表"><span class="toc-number">2.2.</span> <span class="toc-text">部分匹配表</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://blog.yangx.site/2016/05/04/kmp-algorithms/" target="_blank" rel="noopener"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://blog.yangx.site/2016/05/04/kmp-algorithms/&text=字符串匹配KMP算法" target="_blank" rel="noopener"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://blog.yangx.site/2016/05/04/kmp-algorithms/&title=字符串匹配KMP算法" target="_blank" rel="noopener"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=字符串匹配KMP算法&body=Check out this article: https://blog.yangx.site/2016/05/04/kmp-algorithms/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2020 yxiao
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>
