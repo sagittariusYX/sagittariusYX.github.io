@@ -9,7 +9,7 @@
     <meta name="description" content="虽然比较详尽的分析了JVM各个垃圾收集算法的执行过程，以及对于各个垃圾收集器的介绍，但似乎条理并不那么清晰。“只看这一篇”的梗实在炒烂了，但事实上这篇文章还是希望在之前对于Java GC的了解上，更加系统的整理一下，旨在梳理出清晰系统的知识网络。 之前有整理过JVM GC相关的知识点，包括以下四篇文章：  JVM调优（一） - 基本概念 JVM调优（二） - 基本垃圾回收算法和垃圾收集器 JVM调">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JVM垃圾收集与内存分配策略">
-<meta property="og:url" content="https://blog.yangx.site/2019/10/07/jvm-gc/index.html">
+<meta property="og:url" content="https://blog.yangx.site/2019/06/07/jvm-gc/index.html">
 <meta property="og:site_name" content="YXiao&#39;s Blog">
 <meta property="og:description" content="虽然比较详尽的分析了JVM各个垃圾收集算法的执行过程，以及对于各个垃圾收集器的介绍，但似乎条理并不那么清晰。“只看这一篇”的梗实在炒烂了，但事实上这篇文章还是希望在之前对于Java GC的了解上，更加系统的整理一下，旨在梳理出清晰系统的知识网络。 之前有整理过JVM GC相关的知识点，包括以下四篇文章：  JVM调优（一） - 基本概念 JVM调优（二） - 基本垃圾回收算法和垃圾收集器 JVM调">
 <meta property="og:locale" content="zh_CN">
@@ -24,8 +24,8 @@
 <meta property="og:image" content="https://blog.yangx.site/images/parallel_old_collector.png">
 <meta property="og:image" content="https://blog.yangx.site/images/cms_collector.png">
 <meta property="og:image" content="https://blog.yangx.site/images/G1_collector.png">
-<meta property="article:published_time" content="2019-10-07T15:07:05.000Z">
-<meta property="article:modified_time" content="2020-02-29T10:49:55.048Z">
+<meta property="article:published_time" content="2019-06-07T15:07:05.000Z">
+<meta property="article:modified_time" content="2020-03-01T14:52:06.316Z">
 <meta property="article:author" content="yxiao">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://blog.yangx.site/images/reachability_analysis.png">
@@ -90,10 +90,10 @@
     <span id="actions">
       <ul>
         
-        <li><a class="icon" href="/2020/01/12/spring-bean-instantiation/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        <li><a class="icon" href="/2019/10/04/java-classloader/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
         
         
-        <li><a class="icon" href="/2019/10/04/java-classloader/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        <li><a class="icon" href="/2018/08/13/DS-quorum-rw/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
         
         <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
         <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
@@ -106,10 +106,10 @@
     <br/>
     <div id="share" style="display: none">
       <ul>
-  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://blog.yangx.site/2019/10/07/jvm-gc/" target="_blank" rel="noopener"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://twitter.com/share?url=https://blog.yangx.site/2019/10/07/jvm-gc/&text=JVM垃圾收集与内存分配策略" target="_blank" rel="noopener"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://blog.yangx.site/2019/10/07/jvm-gc/&title=JVM垃圾收集与内存分配策略" target="_blank" rel="noopener"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=JVM垃圾收集与内存分配策略&body=Check out this article: https://blog.yangx.site/2019/10/07/jvm-gc/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://blog.yangx.site/2019/06/07/jvm-gc/" target="_blank" rel="noopener"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://blog.yangx.site/2019/06/07/jvm-gc/&text=JVM垃圾收集与内存分配策略" target="_blank" rel="noopener"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://blog.yangx.site/2019/06/07/jvm-gc/&title=JVM垃圾收集与内存分配策略" target="_blank" rel="noopener"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=JVM垃圾收集与内存分配策略&body=Check out this article: https://blog.yangx.site/2019/06/07/jvm-gc/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
@@ -138,7 +138,7 @@
       
     <div class="postdate">
       
-        <time datetime="2019-10-07T15:07:05.000Z" itemprop="datePublished">2019-10-07</time>
+        <time datetime="2019-06-07T15:07:05.000Z" itemprop="datePublished">2019-06-07</time>
         
       
     </div>
@@ -315,10 +315,10 @@
 
     <div id="share-footer" style="display: none">
       <ul>
-  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://blog.yangx.site/2019/10/07/jvm-gc/" target="_blank" rel="noopener"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://twitter.com/share?url=https://blog.yangx.site/2019/10/07/jvm-gc/&text=JVM垃圾收集与内存分配策略" target="_blank" rel="noopener"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://blog.yangx.site/2019/10/07/jvm-gc/&title=JVM垃圾收集与内存分配策略" target="_blank" rel="noopener"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=JVM垃圾收集与内存分配策略&body=Check out this article: https://blog.yangx.site/2019/10/07/jvm-gc/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://blog.yangx.site/2019/06/07/jvm-gc/" target="_blank" rel="noopener"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://blog.yangx.site/2019/06/07/jvm-gc/&text=JVM垃圾收集与内存分配策略" target="_blank" rel="noopener"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://blog.yangx.site/2019/06/07/jvm-gc/&title=JVM垃圾收集与内存分配策略" target="_blank" rel="noopener"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=JVM垃圾收集与内存分配策略&body=Check out this article: https://blog.yangx.site/2019/06/07/jvm-gc/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
