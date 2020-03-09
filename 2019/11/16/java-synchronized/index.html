@@ -16,7 +16,7 @@
 <meta property="og:image" content="https://blog.yangx.site/images/monitor.png">
 <meta property="og:image" content="https://blog.yangx.site/images/objectMonitor.png">
 <meta property="article:published_time" content="2019-11-16T15:17:43.000Z">
-<meta property="article:modified_time" content="2020-03-04T15:24:04.187Z">
+<meta property="article:modified_time" content="2020-03-09T15:59:04.963Z">
 <meta property="article:author" content="yxiao">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://blog.yangx.site/images/monitor.png">
@@ -334,7 +334,7 @@
 <p>如果每次循环进去都加锁解锁简直是灾难，JVM会优化成下面这个样子：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> L l = <span class="keyword">new</span> L();</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (l) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; i++) &#123;</span><br><span class="line">            System.out.println(<span class="string">"锁粗化"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h2 id="锁膨胀"><a href="#锁膨胀" class="headerlink" title="锁膨胀"></a>锁膨胀</h2><p>锁膨胀指的是根据被锁资源的竞争程度，进行无锁 -&gt; 偏向锁 -&gt; 轻量级锁 -&gt; 重量级锁的升级过程，而不是上来就上个重量级锁。</p>
+<h2 id="锁膨胀"><a href="#锁膨胀" class="headerlink" title="锁膨胀"></a>锁膨胀</h2><p>锁膨胀指的是jdk 1.6之后针对于synchronized关键字做的优化，根据被锁资源的竞争程度，进行无锁 -&gt; 偏向锁 -&gt; 轻量级锁 -&gt; 重量级锁的升级过程，而不是上来就上个重量级锁。</p>
 <ol>
 <li>偏向锁：只有一个线程进入临界区；</li>
 <li>轻量级锁：多个线程未竞争或者竞争不激烈，同步块执行速度非常快；</li>
