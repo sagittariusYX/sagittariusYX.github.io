@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Pandas是基于NumPy的一个非常好用的库，正如名字一样，人见人爱。之所以如此，就在于不论是读取、处理数据，用它都非常简单。此前有一篇文章《别老扯什么Hadoop了，你的数据根本不够大》指出：只有在超过5TB数据量的规模下，Hadoop才是一个合理的技术选择。相对小一些的数据，我这两天发现使用Python + Pandas处理起来更加敏捷。 安装Pandas非常简单，只需要一行命令（当然你需要">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Pandas简介和使用">
+<meta property="og:url" content="https://sagittariusyx.github.io/2016/07/18/pandas-intro/index.html">
+<meta property="og:site_name" content="YXiao&#39;s Blog">
+<meta property="og:description" content="Pandas是基于NumPy的一个非常好用的库，正如名字一样，人见人爱。之所以如此，就在于不论是读取、处理数据，用它都非常简单。此前有一篇文章《别老扯什么Hadoop了，你的数据根本不够大》指出：只有在超过5TB数据量的规模下，Hadoop才是一个合理的技术选择。相对小一些的数据，我这两天发现使用Python + Pandas处理起来更加敏捷。 安装Pandas非常简单，只需要一行命令（当然你需要">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2016-07-18T03:59:56.000Z">
+<meta property="article:modified_time" content="2020-02-29T10:51:54.000Z">
+<meta property="article:author" content="yxiao">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Pandas简介和使用</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+    <script data-ad-client="ca-pub-9170262800275390" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2016/08/04/git-rebase/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2016/07/06/bit-operation-skills/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://sagittariusyx.github.io/2016/07/18/pandas-intro/" target="_blank" rel="noopener"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://sagittariusyx.github.io/2016/07/18/pandas-intro/&text=Pandas简介和使用" target="_blank" rel="noopener"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://sagittariusyx.github.io/2016/07/18/pandas-intro/&title=Pandas简介和使用" target="_blank" rel="noopener"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Pandas简介和使用&body=Check out this article: https://sagittariusyx.github.io/2016/07/18/pandas-intro/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Pandas数据读取性能"><span class="toc-number">1.</span> <span class="toc-text">Pandas数据读取性能</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#基本数据结构"><span class="toc-number">2.</span> <span class="toc-text">基本数据结构</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Series"><span class="toc-number">2.1.</span> <span class="toc-text">Series</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#DataFrame"><span class="toc-number">2.2.</span> <span class="toc-text">DataFrame</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Pandas使用"><span class="toc-number">3.</span> <span class="toc-text">Pandas使用</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#读取csv文件"><span class="toc-number">3.1.</span> <span class="toc-text">读取csv文件</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#普通办法读取"><span class="toc-number">3.1.1.</span> <span class="toc-text">普通办法读取</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#用Pandas读取"><span class="toc-number">3.1.2.</span> <span class="toc-text">用Pandas读取</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#一个pandas实例"><span class="toc-number">4.</span> <span class="toc-text">一个pandas实例</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Pandas简介和使用
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">YXiao's Blog</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2016-07-18T03:59:56.000Z" itemprop="datePublished">2016-07-18</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fas fa-archive"></i>
+        <a class="category-link" href="/categories/Python/">Python</a>
+    </div>
+
+
+      
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>Pandas是基于NumPy的一个非常好用的库，正如名字一样，人见人爱。之所以如此，就在于不论是读取、处理数据，用它都非常简单。此前有一篇文章《<a href="http://geek.csdn.net/news/detail/2780" target="_blank" rel="noopener">别老扯什么Hadoop了，你的数据根本不够大</a>》指出：只有在超过5TB数据量的规模下，Hadoop才是一个合理的技术选择。相对小一些的数据，我这两天发现使用Python + Pandas处理起来更加敏捷。</p>
+<p>安装Pandas非常简单，只需要一行命令（当然你需要先安装pip）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install pandas</span><br></pre></td></tr></table></figure>
+<h1 id="Pandas数据读取性能"><a href="#Pandas数据读取性能" class="headerlink" title="Pandas数据读取性能"></a>Pandas数据读取性能</h1><p>Pandas提供了IO工具可以将大文件分块读取，测试了一下性能，完整加载9800万条数据也只需要263秒左右，还是相当不错了。</p>
+<p>根据测试，对于不同数据量的数据读取时间如下：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>1百万条</th>
+<th>1千万条</th>
+<th>1亿条</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Data</td>
+<td>1s</td>
+<td>17s</td>
+<td>263s</td>
+</tr>
+</tbody></table>
+<h1 id="基本数据结构"><a href="#基本数据结构" class="headerlink" title="基本数据结构"></a>基本数据结构</h1><p>Pandas有两种自己独有的基本数据结构。应该注意的是，它固然有着两种数据结构，因为它依然是python的一个库，所以，python中有的数据类型在这里依然适用，也同样还可以使用类自己定义数据类型。只不过，Pandas里面又定义了两种数据类型：Series和DataFrame，它们让数据操作更简单了。</p>
+<p>以下操作都是基于：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pandas <span class="keyword">import</span> Series, DataFrame</span><br><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br></pre></td></tr></table></figure>
+
+<h2 id="Series"><a href="#Series" class="headerlink" title="Series"></a>Series</h2><p>Series就如同列表一样，是一系列数据，每个数据对应一个索引值。比如这样一个列表：[9, 3, 8]，如果跟索引值写到一起，就是：</p>
+<table>
+<thead>
+<tr>
+<th>data</th>
+<th>9</th>
+<th>3</th>
+<th>8</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>index</td>
+<td>0</td>
+<td>1</td>
+<td>2</td>
+</tr>
+</tbody></table>
+<p>这种样式我们已经熟悉了，不过，在有些时候，需要把它竖过来表示：</p>
+<table>
+<thead>
+<tr>
+<th>index</th>
+<th>data</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>9</td>
+</tr>
+<tr>
+<td>1</td>
+<td>3</td>
+</tr>
+<tr>
+<td>2</td>
+<td>8</td>
+</tr>
+</tbody></table>
+<p>上面两种，只是表现形式上的差别而已，而Series就是竖起来的list:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>s = Series([<span class="number">100</span>, <span class="string">"PYTHON"</span>, <span class="string">"Soochow"</span>, <span class="string">"Qiwsir"</span>])</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s</span><br><span class="line"><span class="number">0</span>        <span class="number">100</span></span><br><span class="line"><span class="number">1</span>     PYTHON</span><br><span class="line"><span class="number">2</span>    Soochow</span><br><span class="line"><span class="number">3</span>     Qiwsir</span><br><span class="line">dtype: object</span><br></pre></td></tr></table></figure>
+
+<p>另外一点也很像列表，就是里面的元素的类型，由你任意决定（其实是由需要来决定）。</p>
+<p>这里，我们实质上创建了一个Series对象，这个对象当然就有其属性和方法了。比如，下面的两个属性依次可以显示Series对象的数据值和索引：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>s.values</span><br><span class="line">array([<span class="number">100</span>, <span class="string">'PYTHON'</span>, <span class="string">'Soochow'</span>, <span class="string">'Qiwsir'</span>], dtype=object)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s.index</span><br><span class="line">RangeIndex(start=<span class="number">0</span>, stop=<span class="number">4</span>, step=<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+
+<p>列表的索引只能是从0开始的整数，Series数据类型在默认情况下，其索引也是如此。不过，区别于列表的是，Series可以自定义索引：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>s2 = Series([<span class="number">100</span>, <span class="string">"PYTHON"</span>, <span class="string">"Soochow"</span>, <span class="string">"Qiwsir"</span>], \</span><br><span class="line"><span class="meta">... </span>index=[<span class="string">"mark"</span>, <span class="string">"title"</span>, <span class="string">"university"</span>, <span class="string">"name"</span>])</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s2</span><br><span class="line">mark              <span class="number">100</span></span><br><span class="line">title          PYTHON</span><br><span class="line">university    Soochow</span><br><span class="line">name           Qiwsir</span><br><span class="line">dtype: object</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s2.index</span><br><span class="line">Index([<span class="string">u'mark'</span>, <span class="string">u'title'</span>, <span class="string">u'university'</span>, <span class="string">u'name'</span>], dtype=<span class="string">'object'</span>)</span><br></pre></td></tr></table></figure>
+
+<p>每个元素都有了索引，就可以根据索引操作元素了。类似于list中的操作，根据索引查看其值和修改其值：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>s2[<span class="string">"name"</span>]</span><br><span class="line"><span class="string">'Qiwsir'</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s2[<span class="string">"name"</span>] = <span class="string">"AOI"</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s2</span><br><span class="line">mark              <span class="number">100</span></span><br><span class="line">title          PYTHON</span><br><span class="line">university    Soochow</span><br><span class="line">name              AOI</span><br><span class="line">dtype: object</span><br></pre></td></tr></table></figure>
+
+<p>某种程度上，还有些类似dict操作数据；如果对此不太理解，可以看下面的例子。</p>
+<p>前面定义Series对象的时候，用的是列表，即Series()方法的参数中，第一个列表就是其数据值，如果需要定义index，放在后面，依然是一个列表。除了这种方法之外，还可以用下面的方法定义Series对象：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>sd = &#123;<span class="string">"python"</span>:<span class="number">8000</span>, <span class="string">"c++"</span>:<span class="number">8100</span>, <span class="string">"c"</span>:<span class="number">4000</span>&#125;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s4 = Series(sd)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s4</span><br><span class="line">c         <span class="number">4000</span></span><br><span class="line">c++       <span class="number">8100</span></span><br><span class="line">python    <span class="number">8000</span></span><br><span class="line">dtype: int64</span><br></pre></td></tr></table></figure>
+
+<p>现在是否理解为什么前面那个类似dict了？因为本来就是可以这样定义的。</p>
+<p>这时候，索引依然可以自定义。Pandas的优势在这里体现出来，如果自定义了索引，自定的索引会自动寻找原来的索引，如果一样的，就取原来索引对应的值，这个可以简称为“自动对齐”。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>s6 = Series(sd, index=[<span class="string">"java"</span>, <span class="string">"python"</span>, <span class="string">"c++"</span>, <span class="string">"c"</span>])</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s6</span><br><span class="line">java         NaN</span><br><span class="line">python    <span class="number">8000.0</span></span><br><span class="line">c++       <span class="number">8100.0</span></span><br><span class="line">c         <span class="number">4000.0</span></span><br><span class="line">dtype: float64</span><br></pre></td></tr></table></figure>
+
+<p>在sd中，只有<code>&#39;python&#39;:8000, &#39;c++&#39;:8100, &#39;c&#39;:4000</code>，没有<code>&quot;java&quot;</code>，但是在索引参数中有，于是其它能够“自动对齐”的照搬原值，没有的那个<code>&quot;java&quot;</code>，依然在新Series对象的索引中存在，并且自动为其赋值<code>NaN</code>。在Pandas中，如果没有值，都对齐赋给<code>NaN</code>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>pd.isnull(s6)</span><br><span class="line">java       <span class="literal">True</span></span><br><span class="line">python    <span class="literal">False</span></span><br><span class="line">c++       <span class="literal">False</span></span><br><span class="line">c         <span class="literal">False</span></span><br><span class="line">dtype: bool</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>pd.notnull(s6)</span><br><span class="line">java      <span class="literal">False</span></span><br><span class="line">python     <span class="literal">True</span></span><br><span class="line">c++        <span class="literal">True</span></span><br><span class="line">c          <span class="literal">True</span></span><br><span class="line">dtype: bool</span><br></pre></td></tr></table></figure>
+
+<p>此外，Series对象也有同样的方法：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>s6.isnull()</span><br><span class="line">java       <span class="literal">True</span></span><br><span class="line">python    <span class="literal">False</span></span><br><span class="line">c++       <span class="literal">False</span></span><br><span class="line">c         <span class="literal">False</span></span><br><span class="line">dtype: bool</span><br></pre></td></tr></table></figure>
+
+<p>对于Series数据，也可以做类似下面的运算</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>s3 = Series([<span class="number">3</span>, <span class="number">9</span>, <span class="number">4</span>, <span class="number">7</span>], index=[<span class="string">'a'</span>, <span class="string">'b'</span>, <span class="string">'c'</span>, <span class="string">'d'</span>])</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s3</span><br><span class="line">a    <span class="number">3</span></span><br><span class="line">b    <span class="number">9</span></span><br><span class="line">c    <span class="number">4</span></span><br><span class="line">d    <span class="number">7</span></span><br><span class="line">dtype: int64</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s3[s3 &gt; <span class="number">5</span>]</span><br><span class="line">b    <span class="number">9</span></span><br><span class="line">d    <span class="number">7</span></span><br><span class="line">dtype: int64</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s3 * <span class="number">5</span></span><br><span class="line">a    <span class="number">15</span></span><br><span class="line">b    <span class="number">45</span></span><br><span class="line">c    <span class="number">20</span></span><br><span class="line">d    <span class="number">35</span></span><br><span class="line">dtype: int64</span><br></pre></td></tr></table></figure>
+
+<h2 id="DataFrame"><a href="#DataFrame" class="headerlink" title="DataFrame"></a>DataFrame</h2><p>DataFrame是一种二维的数据结构，非常接近于电子表格或者类似mysql数据库的形式。它的竖行称之为columns，横行跟前面的Series一样，称之为index，也就是说可以通过columns和index来确定一个主句的位置。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> pandas <span class="keyword">as</span> pd </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> pandas <span class="keyword">import</span> Series, DataFrame</span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>data = &#123;<span class="string">"name"</span>:[<span class="string">"yahoo"</span>,<span class="string">"google"</span>,<span class="string">"facebook"</span>], \</span><br><span class="line"><span class="meta">... </span><span class="string">"marks"</span>:[<span class="number">200</span>,<span class="number">400</span>,<span class="number">800</span>], <span class="string">"price"</span>:[<span class="number">9</span>, <span class="number">3</span>, <span class="number">7</span>]&#125; </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>f1 = DataFrame(data) </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>f1 </span><br><span class="line">     marks  name      price </span><br><span class="line"><span class="number">0</span>    <span class="number">200</span>    yahoo     <span class="number">9</span> </span><br><span class="line"><span class="number">1</span>    <span class="number">400</span>    google    <span class="number">3</span> </span><br><span class="line"><span class="number">2</span>    <span class="number">800</span>    facebook  <span class="number">7</span></span><br></pre></td></tr></table></figure>
+
+<p>这是定义一个DataFrame对象的常用方法——使用dict定义。字典的“键”（”name”，”marks”，”price”）就是DataFrame的columns的值（名称），字典中每个“键”的“值”是一个列表，它们就是那一竖列中的具体填充数据。上面的定义中没有确定索引，所以，按照惯例（Series中已经形成的惯例）就是从0开始的整数。从上面的结果中很明显表示出来，这就是一个二维的数据结构（类似excel或者mysql中的查看效果）。</p>
+<p>上面的数据显示中，columns的顺序没有规定，就如同字典中键的顺序一样，但是在DataFrame中，columns跟字典键相比，有一个明显不同，就是其顺序可以被规定，像下面这样做：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>f2 = DataFrame(data, columns=[<span class="string">'name'</span>,<span class="string">'price'</span>,<span class="string">'marks'</span>]) </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>f2</span><br><span class="line">       name  price  marks</span><br><span class="line"><span class="number">0</span>     yahoo      <span class="number">9</span>    <span class="number">200</span></span><br><span class="line"><span class="number">1</span>    google      <span class="number">3</span>    <span class="number">400</span></span><br><span class="line"><span class="number">2</span>  facebook      <span class="number">7</span>    <span class="number">800</span></span><br></pre></td></tr></table></figure>
+
+<p>跟Series类似的，DataFrame数据的索引也能够自定义。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>f3 = DataFrame(data, columns=[<span class="string">'name'</span>, <span class="string">'price'</span>, <span class="string">'marks'</span>, <span class="string">'debt'</span>], index=[<span class="string">'a'</span>,<span class="string">'b'</span>,<span class="string">'c'</span>]) </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>f3</span><br><span class="line">       name  price  marks debt</span><br><span class="line">a     yahoo      <span class="number">9</span>    <span class="number">200</span>  NaN</span><br><span class="line">b    google      <span class="number">3</span>    <span class="number">400</span>  NaN</span><br><span class="line">c  facebook      <span class="number">7</span>    <span class="number">800</span>  NaN</span><br></pre></td></tr></table></figure>
+
+<p>还要注意观察上面的显示结果。因为在定义f3的时候，columns的参数中，比以往多了一项(‘debt’)，但是这项在data这个字典中并没有，所以debt这一竖列的值都是空的，在Pandas中，空就用NaN来代表了。</p>
+<p>定义DataFrame的方法，除了上面的之外，还可以使用“字典套字典”的方式。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>newdata = &#123;<span class="string">"lang"</span>:&#123;<span class="string">"firstline"</span>:<span class="string">"python"</span>,<span class="string">"secondline"</span>:<span class="string">"java"</span>&#125;, <span class="string">"price"</span>:&#123;<span class="string">"firstline"</span>:<span class="number">8000</span>&#125;&#125; </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>f4 = DataFrame(newdata)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>f4</span><br><span class="line">              lang   price</span><br><span class="line">firstline   python  <span class="number">8000.0</span></span><br><span class="line">secondline    java     NaN</span><br></pre></td></tr></table></figure>
+
+<p>在字典中就规定好数列名称（第一层键）和每横行索引（第二层字典键）以及对应的数据（第二层字典值），也就是在字典中规定好了每个数据格子中的数据，没有规定的都是空。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>DataFrame(newdata, index=[<span class="string">"firstline"</span>,<span class="string">"secondline"</span>,<span class="string">"thirdline"</span>])</span><br><span class="line">              lang   price</span><br><span class="line">firstline   python  <span class="number">8000.0</span></span><br><span class="line">secondline    java     NaN</span><br><span class="line">thirdline      NaN     NaN</span><br></pre></td></tr></table></figure>
+
+<p>如果额外确定了索引，就如同上面显示一样，除非在字典中有相应的索引内容，否则都是NaN。</p>
+<p>前面定义了DataFrame数据（可以通过两种方法），它也是一种对象类型，比如变量f3引用了一个对象，它的类型是DataFrame。承接以前的思维方法：对象有属性和方法。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>f3.columns</span><br><span class="line">Index([<span class="string">u'name'</span>, <span class="string">u'price'</span>, <span class="string">u'marks'</span>, <span class="string">u'debt'</span>], dtype=<span class="string">'object'</span>)</span><br></pre></td></tr></table></figure>
+
+<p>DataFrame对象的columns属性，能够显示现有的columns名称。并且，还能用下面类似字典的方式，得到某竖列的全部内容（当然包含索引）：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>f3[<span class="string">'name'</span>] </span><br><span class="line">a       yahoo</span><br><span class="line">b      google</span><br><span class="line">c    facebook</span><br><span class="line">Name: name, dtype: object</span><br></pre></td></tr></table></figure>
+
+<p>这是什么？这其实就是一个Series，或者说，可以将DataFrame理解为是由一个一个的Series组成的。</p>
+<p>对于没有数值的那一列，下面的操作是统一给那一列赋值：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>f3[<span class="string">'debt'</span>] = <span class="number">89.2</span> </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>f3</span><br><span class="line">       name  price  marks  debt</span><br><span class="line">a     yahoo      <span class="number">9</span>    <span class="number">200</span>  <span class="number">89.2</span></span><br><span class="line">b    google      <span class="number">3</span>    <span class="number">400</span>  <span class="number">89.2</span></span><br><span class="line">c  facebook      <span class="number">7</span>    <span class="number">800</span>  <span class="number">89.2</span></span><br></pre></td></tr></table></figure>
+
+<p>除了能够统一赋值之外，还能够“点对点”添加数值，结合前面的Series，既然DataFrame对象的每竖列都是一个Series对象，那么可以先定义一个Series对象，然后把它放到DataFrame对象中。如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>sdebt = Series([<span class="number">2.2</span>, <span class="number">3.3</span>], index=[<span class="string">"a"</span>,<span class="string">"c"</span>])    <span class="comment">#注意索引 </span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>f3[<span class="string">'debt'</span>] = sdebt</span><br></pre></td></tr></table></figure>
+
+<p>将Series对象(sdebt变量所引用) 赋给f3[‘debt’]列，Pandas的一个重要特性——自动对齐——在这里起做用了，在Series中，只有两个索引（”a”,”c”），它们将和DataFrame中的索引自动对齐。于是有：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>f3</span><br><span class="line">       name  price  marks  debt</span><br><span class="line">a     yahoo      <span class="number">9</span>    <span class="number">200</span>   <span class="number">2.2</span></span><br><span class="line">b    google      <span class="number">3</span>    <span class="number">400</span>   NaN</span><br><span class="line">c  facebook      <span class="number">7</span>    <span class="number">800</span>   <span class="number">3.3</span></span><br></pre></td></tr></table></figure>
+
+<p>自动对齐之后，没有被复制的依然保持NaN。</p>
+<h1 id="Pandas使用"><a href="#Pandas使用" class="headerlink" title="Pandas使用"></a>Pandas使用</h1><p>由于篇幅限制，不能讲pandas所有内容完全详尽描述，只是做一个简单的介绍，在实践中使用如果遇到问题，建议参考相关文档或者google来解决（不要用baidu）。</p>
+<h2 id="读取csv文件"><a href="#读取csv文件" class="headerlink" title="读取csv文件"></a>读取csv文件</h2><h3 id="普通办法读取"><a href="#普通办法读取" class="headerlink" title="普通办法读取"></a>普通办法读取</h3><p>最简单、最直接的就是open()打开文件：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">with</span> open(<span class="string">"./marks.csv"</span>) <span class="keyword">as</span> f:</span><br><span class="line"><span class="meta">... </span>    <span class="keyword">for</span> line <span class="keyword">in</span> f:</span><br><span class="line"><span class="meta">... </span>        <span class="keyword">print</span> line</span><br><span class="line"><span class="meta">... </span></span><br><span class="line">name,physics,python,math,english</span><br><span class="line"></span><br><span class="line">Google,<span class="number">100</span>,<span class="number">100</span>,<span class="number">25</span>,<span class="number">12</span></span><br><span class="line"></span><br><span class="line">Facebook,<span class="number">45</span>,<span class="number">54</span>,<span class="number">44</span>,<span class="number">88</span></span><br><span class="line"></span><br><span class="line">Twitter,<span class="number">54</span>,<span class="number">76</span>,<span class="number">13</span>,<span class="number">91</span></span><br><span class="line"></span><br><span class="line">Yahoo,<span class="number">54</span>,<span class="number">452</span>,<span class="number">26</span>,<span class="number">100</span></span><br></pre></td></tr></table></figure>
+
+<p>此方法可以，但略显麻烦。python中还有一个csv的标准库：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> csv </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dir(csv)</span><br><span class="line">[<span class="string">'Dialect'</span>, <span class="string">'DictReader'</span>, <span class="string">'DictWriter'</span>, <span class="string">'Error'</span>, <span class="string">'QUOTE_ALL'</span>, <span class="string">'QUOTE_MINIMAL'</span>, <span class="string">'QUOTE_NONE'</span>, <span class="string">'QUOTE_NONNUMERIC'</span>, <span class="string">'Sniffer'</span>, <span class="string">'StringIO'</span>, <span class="string">'_Dialect'</span>, <span class="string">'__all__'</span>, <span class="string">'__builtins__'</span>, <span class="string">'__doc__'</span>, <span class="string">'__file__'</span>, <span class="string">'__name__'</span>, <span class="string">'__package__'</span>, <span class="string">'__version__'</span>, <span class="string">'excel'</span>, <span class="string">'excel_tab'</span>, <span class="string">'field_size_limit'</span>, <span class="string">'get_dialect'</span>, <span class="string">'list_dialects'</span>, <span class="string">'re'</span>, <span class="string">'reader'</span>, <span class="string">'reduce'</span>, <span class="string">'register_dialect'</span>, <span class="string">'unregister_dialect'</span>, <span class="string">'writer'</span>]</span><br></pre></td></tr></table></figure>
+
+<p>从上面结果可以看出，csv模块提供的属性和方法。仅仅就读取本例子中的文件：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> csv </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>csv_reader = csv.reader(open(<span class="string">"./marks.csv"</span>))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">for</span> row <span class="keyword">in</span> csv_reader:</span><br><span class="line"><span class="meta">... </span>    <span class="keyword">print</span> row</span><br><span class="line"><span class="meta">... </span></span><br><span class="line">[<span class="string">'name'</span>, <span class="string">'physics'</span>, <span class="string">'python'</span>, <span class="string">'math'</span>, <span class="string">'english'</span>]</span><br><span class="line">[<span class="string">'Google'</span>, <span class="string">'100'</span>, <span class="string">'100'</span>, <span class="string">'25'</span>, <span class="string">'12'</span>]</span><br><span class="line">[<span class="string">'Facebook'</span>, <span class="string">'45'</span>, <span class="string">'54'</span>, <span class="string">'44'</span>, <span class="string">'88'</span>]</span><br><span class="line">[<span class="string">'Twitter'</span>, <span class="string">'54'</span>, <span class="string">'76'</span>, <span class="string">'13'</span>, <span class="string">'91'</span>]</span><br><span class="line">[<span class="string">'Yahoo'</span>, <span class="string">'54'</span>, <span class="string">'452'</span>, <span class="string">'26'</span>, <span class="string">'100'</span>]</span><br></pre></td></tr></table></figure>
+
+<p>算是稍有改善。</p>
+<h3 id="用Pandas读取"><a href="#用Pandas读取" class="headerlink" title="用Pandas读取"></a>用Pandas读取</h3><p>我们来看一下pandas的效果：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>marks = pd.read_csv(<span class="string">"./marks.csv"</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>marks</span><br><span class="line">       name  physics  python  math  english</span><br><span class="line"><span class="number">0</span>    Google      <span class="number">100</span>     <span class="number">100</span>    <span class="number">25</span>       <span class="number">12</span></span><br><span class="line"><span class="number">1</span>  Facebook       <span class="number">45</span>      <span class="number">54</span>    <span class="number">44</span>       <span class="number">88</span></span><br><span class="line"><span class="number">2</span>   Twitter       <span class="number">54</span>      <span class="number">76</span>    <span class="number">13</span>       <span class="number">91</span></span><br><span class="line"><span class="number">3</span>     Yahoo       <span class="number">54</span>     <span class="number">452</span>    <span class="number">26</span>      <span class="number">100</span></span><br></pre></td></tr></table></figure>
+
+<p>以上结果就是一个DataFrame数据对象。</p>
+<p>还有另外一种方法：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>pd.read_table(<span class="string">"./marks.csv"</span>, sep=<span class="string">","</span>)</span><br><span class="line">       name  physics  python  math  english</span><br><span class="line"><span class="number">0</span>    Google      <span class="number">100</span>     <span class="number">100</span>    <span class="number">25</span>       <span class="number">12</span></span><br><span class="line"><span class="number">1</span>  Facebook       <span class="number">45</span>      <span class="number">54</span>    <span class="number">44</span>       <span class="number">88</span></span><br><span class="line"><span class="number">2</span>   Twitter       <span class="number">54</span>      <span class="number">76</span>    <span class="number">13</span>       <span class="number">91</span></span><br><span class="line"><span class="number">3</span>     Yahoo       <span class="number">54</span>     <span class="number">452</span>    <span class="number">26</span>      <span class="number">100</span></span><br></pre></td></tr></table></figure>
+
+<p>如果你有足够的好奇心来研究这个名叫DataFrame的对象，可以这样：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>dir(marks)</span><br><span class="line">[<span class="string">'T'</span>, <span class="string">'_AXIS_ALIASES'</span>, <span class="string">'_AXIS_NAMES'</span>, <span class="string">'_AXIS_NUMBERS'</span>, <span class="string">'__add__'</span>, <span class="string">'__and__'</span>, <span class="string">'__array__'</span>, <span class="string">'__array_wrap__'</span>, <span class="string">'__class__'</span>, <span class="string">'__contains__'</span>, <span class="string">'__delattr__'</span>, <span class="string">'__delitem__'</span>, <span class="string">'__dict__'</span>, <span class="string">'__div__'</span>, <span class="string">'__doc__'</span>, <span class="string">'__eq__'</span>, <span class="string">'__floordiv__'</span>, <span class="string">'__format__'</span>, <span class="string">'__ge__'</span>, <span class="string">'__getattr__'</span>, <span class="string">'__getattribute__'</span>, <span class="string">'__getitem__'</span>, <span class="string">'__getstate__'</span>, <span class="string">'__gt__'</span>, <span class="string">'__hash__'</span>, <span class="string">'__init__'</span>, <span class="string">'__iter__'</span>, <span class="string">'__le__'</span>, <span class="string">'__len__'</span>, <span class="string">'__lt__'</span>, <span class="string">'__module__'</span>, <span class="string">'__mul__'</span>, <span class="string">'__ne__'</span>, <span class="string">'__neg__'</span>, <span class="string">'__new__'</span>, <span class="string">'__nonzero__'</span>, <span class="string">'__or__'</span>, <span class="string">'__pow__'</span>, <span class="string">'__radd__'</span>, <span class="string">'__rdiv__'</span>, <span class="string">'__reduce__'</span>, <span class="string">'__reduce_ex__'</span>, <span class="string">'__repr__'</span>, <span class="string">'__rfloordiv__'</span>, <span class="string">'__rmul__'</span>, <span class="string">'__rpow__'</span>, <span class="string">'__rsub__'</span>, <span class="string">'__rtruediv__'</span>, <span class="string">'__setattr__'</span>, <span class="string">'__setitem__'</span>, <span class="string">'__setstate__'</span>, <span class="string">'__sizeof__'</span>, <span class="string">'__str__'</span>, <span class="string">'__sub__'</span>, <span class="string">'__subclasshook__'</span>, <span class="string">'__truediv__'</span>, <span class="string">'__weakref__'</span>, <span class="string">'__xor__'</span>, <span class="string">'_agg_by_level'</span>, <span class="string">'_align_frame'</span>, <span class="string">'_align_series'</span>, <span class="string">'_apply_broadcast'</span>, <span class="string">'_apply_raw'</span>, <span class="string">'_apply_standard'</span>, <span class="string">'_auto_consolidate'</span>, <span class="string">'_bar_plot'</span>, <span class="string">'_boolean_set'</span>, <span class="string">'_box_item_values'</span>, <span class="string">'_clear_item_cache'</span>, <span class="string">'_combine_const'</span>, <span class="string">'_combine_frame'</span>, <span class="string">'_combine_match_columns'</span>, <span class="string">'_combine_match_index'</span>, <span class="string">'_combine_series'</span>, <span class="string">'_combine_series_infer'</span>, <span class="string">'_compare_frame'</span>, <span class="string">'_consolidate_inplace'</span>, <span class="string">'_constructor'</span>, <span class="string">'_count_level'</span>, <span class="string">'_cov_helper'</span>, <span class="string">'_data'</span>, <span class="string">'_default_stat_axis'</span>, <span class="string">'_expand_axes'</span>, <span class="string">'_from_axes'</span>, <span class="string">'_get_agg_axis'</span>, <span class="string">'_get_axis'</span>, <span class="string">'_get_axis_name'</span>, <span class="string">'_get_axis_number'</span>, <span class="string">'_get_item_cache'</span>, <span class="string">'_get_numeric_data'</span>, <span class="string">'_getitem_array'</span>, <span class="string">'_getitem_multilevel'</span>, <span class="string">'_helper_csvexcel'</span>, <span class="string">'_het_axis'</span>, <span class="string">'_indexed_same'</span>, <span class="string">'_init_dict'</span>, <span class="string">'_init_mgr'</span>, <span class="string">'_init_ndarray'</span>, <span class="string">'_is_mixed_type'</span>, <span class="string">'_item_cache'</span>, <span class="string">'_ix'</span>, <span class="string">'_join_compat'</span>, <span class="string">'_reduce'</span>, <span class="string">'_reindex_axis'</span>, <span class="string">'_reindex_columns'</span>, <span class="string">'_reindex_index'</span>, <span class="string">'_reindex_with_indexers'</span>, <span class="string">'_rename_columns_inplace'</span>, <span class="string">'_rename_index_inplace'</span>, <span class="string">'_sanitize_column'</span>, <span class="string">'_series'</span>, <span class="string">'_set_axis'</span>, <span class="string">'_set_item'</span>, <span class="string">'_set_item_multiple'</span>, <span class="string">'_shift_indexer'</span>, <span class="string">'_slice'</span>, <span class="string">'_unpickle_frame_compat'</span>, <span class="string">'_unpickle_matrix_compat'</span>, <span class="string">'_verbose_info'</span>, <span class="string">'_wrap_array'</span>, <span class="string">'abs'</span>, <span class="string">'add'</span>, <span class="string">'add_prefix'</span>, <span class="string">'add_suffix'</span>, <span class="string">'align'</span>, <span class="string">'append'</span>, <span class="string">'apply'</span>, <span class="string">'applymap'</span>, <span class="string">'as_matrix'</span>, <span class="string">'asfreq'</span>, <span class="string">'astype'</span>, <span class="string">'axes'</span>, <span class="string">'boxplot'</span>, <span class="string">'clip'</span>, <span class="string">'clip_lower'</span>, <span class="string">'clip_upper'</span>, <span class="string">'columns'</span>, <span class="string">'combine'</span>, <span class="string">'combineAdd'</span>, <span class="string">'combineMult'</span>, <span class="string">'combine_first'</span>, <span class="string">'consolidate'</span>, <span class="string">'convert_objects'</span>, <span class="string">'copy'</span>, <span class="string">'corr'</span>, <span class="string">'corrwith'</span>, <span class="string">'count'</span>, <span class="string">'cov'</span>, <span class="string">'cummax'</span>, <span class="string">'cummin'</span>, <span class="string">'cumprod'</span>, <span class="string">'cumsum'</span>, <span class="string">'delevel'</span>, <span class="string">'describe'</span>, <span class="string">'diff'</span>, <span class="string">'div'</span>, <span class="string">'dot'</span>, <span class="string">'drop'</span>, <span class="string">'drop_duplicates'</span>, <span class="string">'dropna'</span>, <span class="string">'dtypes'</span>, <span class="string">'duplicated'</span>, <span class="string">'fillna'</span>, <span class="string">'filter'</span>, <span class="string">'first_valid_index'</span>, <span class="string">'from_csv'</span>, <span class="string">'from_dict'</span>, <span class="string">'from_items'</span>, <span class="string">'from_records'</span>, <span class="string">'get'</span>, <span class="string">'get_dtype_counts'</span>, <span class="string">'get_value'</span>, <span class="string">'groupby'</span>, <span class="string">'head'</span>, <span class="string">'hist'</span>, <span class="string">'icol'</span>, <span class="string">'idxmax'</span>, <span class="string">'idxmin'</span>, <span class="string">'iget_value'</span>, <span class="string">'index'</span>, <span class="string">'info'</span>, <span class="string">'insert'</span>, <span class="string">'irow'</span>, <span class="string">'iteritems'</span>, <span class="string">'iterkv'</span>, <span class="string">'iterrows'</span>, <span class="string">'ix'</span>, <span class="string">'join'</span>, <span class="string">'last_valid_index'</span>, <span class="string">'load'</span>, <span class="string">'lookup'</span>, <span class="string">'mad'</span>, <span class="string">'max'</span>, <span class="string">'mean'</span>, <span class="string">'median'</span>, <span class="string">'merge'</span>, <span class="string">'min'</span>, <span class="string">'mul'</span>, <span class="string">'ndim'</span>, <span class="string">'pivot'</span>, <span class="string">'pivot_table'</span>, <span class="string">'plot'</span>, <span class="string">'pop'</span>, <span class="string">'prod'</span>, <span class="string">'product'</span>, <span class="string">'quantile'</span>, <span class="string">'radd'</span>, <span class="string">'rank'</span>, <span class="string">'rdiv'</span>, <span class="string">'reindex'</span>, <span class="string">'reindex_axis'</span>, <span class="string">'reindex_like'</span>, <span class="string">'rename'</span>, <span class="string">'rename_axis'</span>, <span class="string">'reorder_levels'</span>, <span class="string">'reset_index'</span>, <span class="string">'rmul'</span>, <span class="string">'rsub'</span>, <span class="string">'save'</span>, <span class="string">'select'</span>, <span class="string">'set_index'</span>, <span class="string">'set_value'</span>, <span class="string">'shape'</span>, <span class="string">'shift'</span>, <span class="string">'skew'</span>, <span class="string">'sort'</span>, <span class="string">'sort_index'</span>, <span class="string">'sortlevel'</span>, <span class="string">'stack'</span>, <span class="string">'std'</span>, <span class="string">'sub'</span>, <span class="string">'sum'</span>, <span class="string">'swaplevel'</span>, <span class="string">'tail'</span>, <span class="string">'take'</span>, <span class="string">'to_csv'</span>, <span class="string">'to_dict'</span>, <span class="string">'to_excel'</span>, <span class="string">'to_html'</span>, <span class="string">'to_panel'</span>, <span class="string">'to_records'</span>, <span class="string">'to_sparse'</span>, <span class="string">'to_string'</span>, <span class="string">'to_wide'</span>, <span class="string">'transpose'</span>, <span class="string">'truncate'</span>, <span class="string">'unstack'</span>, <span class="string">'values'</span>, <span class="string">'var'</span>, <span class="string">'xs'</span>]</span><br></pre></td></tr></table></figure>
+
+<p>一个一个浏览一下，通过名字可以直到那个方法或者属性的大概，然后就可以根据你的喜好和需要，试一试：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>marks.index</span><br><span class="line">Int64Index([<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], dtype=int64)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>marks.columns</span><br><span class="line">Index([name, physics, python, math, english], dtype=object)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>marks[<span class="string">'name'</span>][<span class="number">1</span>]</span><br><span class="line"><span class="string">'Facebook'</span></span><br></pre></td></tr></table></figure>
+
+<p>下面几个操作，也是常用到的，并且秉承了python的一贯方法：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>marks[:<span class="number">1</span>]</span><br><span class="line">     name  physics  python  math  english</span><br><span class="line"><span class="number">0</span>  Google      <span class="number">100</span>     <span class="number">100</span>    <span class="number">25</span>       <span class="number">12</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>marks[<span class="number">1</span>:<span class="number">2</span>]</span><br><span class="line">       name  physics  python  math  english</span><br><span class="line"><span class="number">1</span>  Facebook       <span class="number">45</span>      <span class="number">54</span>    <span class="number">44</span>       <span class="number">88</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>marks[<span class="string">"physics"</span>]</span><br><span class="line"><span class="number">0</span>    <span class="number">100</span></span><br><span class="line"><span class="number">1</span>     <span class="number">45</span></span><br><span class="line"><span class="number">2</span>     <span class="number">54</span></span><br><span class="line"><span class="number">3</span>     <span class="number">54</span></span><br><span class="line">Name: physics</span><br></pre></td></tr></table></figure>
+
+<p>可以说，当你已经掌握了通过dir()和help()查看对象的方法和属性时，就已经掌握了pandas的用法，其实何止pandas，其它对象都是如此。</p>
+<h1 id="一个pandas实例"><a href="#一个pandas实例" class="headerlink" title="一个pandas实例"></a>一个pandas实例</h1><p>上周一个朋友提出了一个简单的需求：对于百万条数量级的csv文件做一个简单的数据分析，在此非常感谢他让我有机会接触到了pandas，话不多说，上代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">import</span> datetime, csv</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_data</span><span class="params">(rows, key, count)</span>:</span></span><br><span class="line">    data_max, data_min = rows[key].max(), rows[key].min()</span><br><span class="line">    data_avg = (rows[key].sum() / float(count)) <span class="keyword">if</span> count != <span class="number">0</span> <span class="keyword">else</span> <span class="number">0</span></span><br><span class="line">    <span class="keyword">return</span> data_max, data_min, data_avg</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    starttime = datetime.datetime.now()</span><br><span class="line">    data = pd.read_csv(<span class="string">"new_colla.csv"</span>)</span><br><span class="line">    <span class="keyword">with</span> open(<span class="string">'degree_year.csv'</span>,<span class="string">'ab+'</span>) <span class="keyword">as</span> ft:</span><br><span class="line">        writer = csv.writer(ft)</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(n):</span><br><span class="line">            <span class="keyword">for</span> j <span class="keyword">in</span> range(m):</span><br><span class="line">                rows = data[(data.degree1==i) &amp; (data.degree2==j)]</span><br><span class="line"></span><br><span class="line">                <span class="comment"># Get valuable data</span></span><br><span class="line">                age, count = (i, j), rows.colla_time.count()</span><br><span class="line">                <span class="keyword">if</span> count == <span class="number">0</span>:</span><br><span class="line">                    <span class="keyword">continue</span></span><br><span class="line">                colla_time_max, colla_time_min, colla_time_avg = get_data(rows, <span class="string">"colla_time"</span>, count)</span><br><span class="line">                coarticle_num_max, coarticle_num_min, coarticle_num_avg = get_data(rows, <span class="string">"coarticle_num"</span>, count)</span><br><span class="line"></span><br><span class="line">                <span class="comment"># Write file</span></span><br><span class="line">                write_obj = [age, colla_time_max, colla_time_min, colla_time_avg, \</span><br><span class="line">                            coarticle_num_max, coarticle_num_min, coarticle_num_avg, count]</span><br><span class="line">                writer.writerow(write_obj)</span><br><span class="line"></span><br><span class="line">    endtime = datetime.datetime.now()</span><br><span class="line">    <span class="keyword">print</span> (endtime - starttime).seconds</span><br></pre></td></tr></table></figure>
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Pandas数据读取性能"><span class="toc-number">1.</span> <span class="toc-text">Pandas数据读取性能</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#基本数据结构"><span class="toc-number">2.</span> <span class="toc-text">基本数据结构</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Series"><span class="toc-number">2.1.</span> <span class="toc-text">Series</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#DataFrame"><span class="toc-number">2.2.</span> <span class="toc-text">DataFrame</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Pandas使用"><span class="toc-number">3.</span> <span class="toc-text">Pandas使用</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#读取csv文件"><span class="toc-number">3.1.</span> <span class="toc-text">读取csv文件</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#普通办法读取"><span class="toc-number">3.1.1.</span> <span class="toc-text">普通办法读取</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#用Pandas读取"><span class="toc-number">3.1.2.</span> <span class="toc-text">用Pandas读取</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#一个pandas实例"><span class="toc-number">4.</span> <span class="toc-text">一个pandas实例</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://sagittariusyx.github.io/2016/07/18/pandas-intro/" target="_blank" rel="noopener"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://sagittariusyx.github.io/2016/07/18/pandas-intro/&text=Pandas简介和使用" target="_blank" rel="noopener"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://sagittariusyx.github.io/2016/07/18/pandas-intro/&title=Pandas简介和使用" target="_blank" rel="noopener"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Pandas简介和使用&body=Check out this article: https://sagittariusyx.github.io/2016/07/18/pandas-intro/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2022 yxiao
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m) {i['GoogleAnalyticsObject']=r;i[r]=i[r]||function() {
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-159372775-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>

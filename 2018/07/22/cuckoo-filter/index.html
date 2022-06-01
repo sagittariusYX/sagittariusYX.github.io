@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="对于海量数据处理业务，我们通常需要一个索引数据结构，用来帮助查询，快速判断数据记录是否存在，这种数据结构通常又叫过滤器(filter)。考虑这样一个场景，上网的时候需要在浏览器上输入URL，这时浏览器需要去判断这是否一个恶意的网站，它将对本地缓存的成千上万的URL索引进行过滤，如果不存在，就放行，如果（可能）存在，则向远程服务端发起验证请求，并回馈客户端给出警告。 BloomFilter的缺陷时下">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CuckooFilter详解">
+<meta property="og:url" content="https://sagittariusyx.github.io/2018/07/22/cuckoo-filter/index.html">
+<meta property="og:site_name" content="YXiao&#39;s Blog">
+<meta property="og:description" content="对于海量数据处理业务，我们通常需要一个索引数据结构，用来帮助查询，快速判断数据记录是否存在，这种数据结构通常又叫过滤器(filter)。考虑这样一个场景，上网的时候需要在浏览器上输入URL，这时浏览器需要去判断这是否一个恶意的网站，它将对本地缓存的成千上万的URL索引进行过滤，如果不存在，就放行，如果（可能）存在，则向远程服务端发起验证请求，并回馈客户端给出警告。 BloomFilter的缺陷时下">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/bloomFilterWorkflow.png">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/cuckooPreview.png">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/cuckooHashing.png">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/cuckooFilterInsert.png">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/cuckooFilterLookUp.png">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/cuckooFilterDelete.png">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/filterType.png">
+<meta property="article:published_time" content="2018-07-22T14:19:52.000Z">
+<meta property="article:modified_time" content="2020-02-29T10:57:02.000Z">
+<meta property="article:author" content="yxiao">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://sagittariusyx.github.io/images/bloomFilterWorkflow.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>CuckooFilter详解</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+    <script data-ad-client="ca-pub-9170262800275390" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2018/08/01/java-synchronized-volatile/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2018/07/09/bloom-filter/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://sagittariusyx.github.io/2018/07/22/cuckoo-filter/" target="_blank" rel="noopener"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://sagittariusyx.github.io/2018/07/22/cuckoo-filter/&text=CuckooFilter详解" target="_blank" rel="noopener"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://sagittariusyx.github.io/2018/07/22/cuckoo-filter/&title=CuckooFilter详解" target="_blank" rel="noopener"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=CuckooFilter详解&body=Check out this article: https://sagittariusyx.github.io/2018/07/22/cuckoo-filter/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#BloomFilter的缺陷"><span class="toc-number">1.</span> <span class="toc-text">BloomFilter的缺陷</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Cuckoo-Filter"><span class="toc-number">2.</span> <span class="toc-text">Cuckoo Filter</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Cuckoo-Hash-Tables"><span class="toc-number">2.1.</span> <span class="toc-text">Cuckoo Hash Tables</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Cuckoo-Filter算法"><span class="toc-number">2.2.</span> <span class="toc-text">Cuckoo Filter算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#插入"><span class="toc-number">2.2.1.</span> <span class="toc-text">插入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#查找"><span class="toc-number">2.2.2.</span> <span class="toc-text">查找</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#删除"><span class="toc-number">2.2.3.</span> <span class="toc-text">删除</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#总结"><span class="toc-number">3.</span> <span class="toc-text">总结</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        CuckooFilter详解
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">YXiao's Blog</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2018-07-22T14:19:52.000Z" itemprop="datePublished">2018-07-22</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fas fa-archive"></i>
+        <a class="category-link" href="/categories/Algorithms/">Algorithms</a>
+    </div>
+
+
+      
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>对于海量数据处理业务，我们通常需要一个索引数据结构，用来帮助查询，快速判断数据记录是否存在，这种数据结构通常又叫过滤器(filter)。考虑这样一个场景，上网的时候需要在浏览器上输入URL，这时浏览器需要去判断这是否一个恶意的网站，它将对本地缓存的成千上万的URL索引进行过滤，如果不存在，就放行，如果（可能）存在，则向远程服务端发起验证请求，并回馈客户端给出警告。</p>
+<h1 id="BloomFilter的缺陷"><a href="#BloomFilter的缺陷" class="headerlink" title="BloomFilter的缺陷"></a>BloomFilter的缺陷</h1><p>时下一个非常流行的哈希索引结构就是bloom filter，它类似于bitmap这样的hashset，所以空间利用率很高。其独特的地方在于它使用多个哈希函数来避免哈希碰撞，如图所示（来源wikipedia），bit数组初始化为全0，插入x时，x被3个哈希函数分别映射到3个不同的bit位上并置1，查询x时，只有被这3个函数映射到的bit位全部是1才能说明x可能存在，但凡至少出现一个0表示x肯定不存在。</p>
+<p><img src="/images/bloomFilterWorkflow.png" alt="bloomFilterWorkflow"></p>
+<p>但是，bloom filter的这种位图模式带来两个问题：一个是<strong>误报（false positives）</strong>，在查询时能提供“一定不存在”，但只能提供“可能存在”，因为存在其它元素被映射到部分相同bit位上，导致该位置1，那么一个不存在的元素可能会被误报成存在；另一个是<strong>漏报（false nagatives）</strong>，同样道理，如果删除了某个元素，导致该映射bit位被置0，那么本来存在的元素会被漏报成不存在。由于后者问题严重得多，所以bloom filter必须确保“definitely no”从而容忍“probably yes”，不允许元素的删除。</p>
+<p>关于元素删除的问题，一个改良方案是对bloom filter引入计数（Counting Bloom filters），但这样一来，原来每个bit空间就要扩张成一个计数值，空间效率上又降低了。</p>
+<h1 id="Cuckoo-Filter"><a href="#Cuckoo-Filter" class="headerlink" title="Cuckoo Filter"></a>Cuckoo Filter</h1><p>为了解决这一问题，本文引入了一种新的哈希算法 —— cuckoo filter，它既可以确保该元素存在的必然性，又可以在不违背此前提下删除任意元素，仅仅比bitmap牺牲了微量空间效率。</p>
+<h2 id="Cuckoo-Hash-Tables"><a href="#Cuckoo-Hash-Tables" class="headerlink" title="Cuckoo Hash Tables"></a>Cuckoo Hash Tables</h2><p>我们先来看看cuckoo hashing有什么特点，它的哈希函数是成对的（具体的实现可以根据需求设计），每一个元素都是两个，分别映射到两个位置，一个是记录的位置，另一个是备用位置。这个备用位置是处理碰撞时用的，这就要说到cuckoo这个名词的典故了，中文名叫布谷鸟，这种鸟有一种即狡猾又贪婪的习性，它不肯自己筑巢，而是把蛋下到别的鸟巢里，而且它的幼鸟又会比别的鸟早出生，布谷幼鸟天生有一种残忍的动作，幼鸟会拼命把未出生的其它鸟蛋挤出窝巢，今后以便独享“养父母”的食物。借助生物学上这一典故，cuckoo hashing处理碰撞的方法，就是把原来占用位置的这个元素踢走，不过被踢出去的元素还要比鸟蛋幸运，因为它还有一个备用位置可以安置，如果备用位置上还有人，再把它踢走，如此往复。直到被踢的次数达到一个上限，才确认哈希表已满，并执行rehash操作。</p>
+<p><img src="/images/cuckooPreview.png" alt="cuckooPreview"></p>
+<p>我们不禁要问发生哈希碰撞之前的空间利用率是多少呢？不幸地告诉你，一维数组的哈希表上跟其它哈希函数没什么区别，也就50%而已。但如果是二维的呢？</p>
+<p>一个改进的哈希表如下图所示，每个桶（bucket）有4路槽位（slot）。当哈希函数映射到同一个bucket中，在其它三路slot未被填满之前，是不会有元素被踢的，这大大缓冲了碰撞的几率。笔者自己的简单实现上测过，采用二维哈希表（4路slot）大约80%的占用率（<a href="http://www.cs.cmu.edu/~binfan/papers/conext14_cuckoofilter.pdf" target="_blank" rel="noopener">CMU论文</a>数据据说达到90%以上，应该是扩大了slot关联数目所致）。</p>
+<p><img src="/images/cuckooHashing.png" alt="cuckooHashing"></p>
+<p>如上图所示，(a) 表示插入元素x之前已经存在的元素a, b, c。通过计算x的两个可用位置分别被a, b占用了，随机选择一个位置，也就是元素a存放的位置。然后元素a被迁移到它的备用位置，也就是元素c现在的位置。类似的c再做迁移。(c) 表示Cuckoo Hash的一种实现，每个bucket有四个slot。对于 (a) 的情形，则直接把x插入到元素a或b所在的bucket的空的slot里面即可。</p>
+<p>Cuckoo Filter是Cuckoo Hash的一种更节省空间的变体，它在bucket中存放的不是元素本身，而是 fingerprint(x) 值，也是类似于一种哈希值。</p>
+<h2 id="Cuckoo-Filter算法"><a href="#Cuckoo-Filter算法" class="headerlink" title="Cuckoo Filter算法"></a>Cuckoo Filter算法</h2><p>Cuckoo Hash Table的基本单元叫做entry，每个entry存储一个fingerprint。Hash Table由多个bucket组成，每个bucket有多个entry。</p>
+<h3 id="插入"><a href="#插入" class="headerlink" title="插入"></a>插入</h3><p>假设对于x的两个可用位置为i1, i2。当出现x需要迁移的时候，我们怎么得到它的另一个位置呢？因为bucket里面存放的是f = fingerprint值，所以i1，i2不能简单的通过两个哈希函数计算得到。这里使用异或运算达到i1，i2可以互相转化的目的。具体算法如下：</p>
+<p><img src="/images/cuckooFilterInsert.png" alt="cuckooFilterInsert"></p>
+<p>另外在我们为元素再分配地址（下面简称reallocate）的时候，如果一直找不到空闲的位置（比如x, y 的两个可用位置i1, i2完全相同），或者可以找到但是需要的时间出于性能方面的考虑不能忍受，这个时候就需要我们做一个限制，比如设置一个最大的reallocate的次数。</p>
+<h3 id="查找"><a href="#查找" class="headerlink" title="查找"></a>查找</h3><p>查找很简单，但是需要注意的是存在误判的。</p>
+<p><img src="/images/cuckooFilterLookUp.png" alt="cuckooFilterLookUp"></p>
+<h3 id="删除"><a href="#删除" class="headerlink" title="删除"></a>删除</h3><p>删除也是删除的元素fingerprint值，存在误删的情况。</p>
+<p><img src="/images/cuckooFilterDelete.png" alt="cuckooFilterDelete"></p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>Cuckoo Filter的优点是不言而喻的：</p>
+<ul>
+<li>支持动态的插入、删除操作</li>
+<li>整个数据结构接近满的时候，Cuckoo Filter具有更佳的查找性能（95%的空间利用率）</li>
+<li>容易实现</li>
+<li>False Positive Rate比Bloom Filter更小，并且具有更高的空间利用率</li>
+</ul>
+<p>同其他的filter比较：</p>
+<p><img src="/images/filterType.png" alt="filterType"></p>
+<p>但Cuckoo Filter还是有一些缺点：</p>
+<ul>
+<li>由于进行XOR运算，使得Filter的个数必须为2的整数次幂</li>
+<li>储存fingerprint在filter内当做特征值，虽然有一定好处，但是也存在碰撞机会而造成false positive</li>
+</ul>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#BloomFilter的缺陷"><span class="toc-number">1.</span> <span class="toc-text">BloomFilter的缺陷</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Cuckoo-Filter"><span class="toc-number">2.</span> <span class="toc-text">Cuckoo Filter</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Cuckoo-Hash-Tables"><span class="toc-number">2.1.</span> <span class="toc-text">Cuckoo Hash Tables</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Cuckoo-Filter算法"><span class="toc-number">2.2.</span> <span class="toc-text">Cuckoo Filter算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#插入"><span class="toc-number">2.2.1.</span> <span class="toc-text">插入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#查找"><span class="toc-number">2.2.2.</span> <span class="toc-text">查找</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#删除"><span class="toc-number">2.2.3.</span> <span class="toc-text">删除</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#总结"><span class="toc-number">3.</span> <span class="toc-text">总结</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://sagittariusyx.github.io/2018/07/22/cuckoo-filter/" target="_blank" rel="noopener"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://sagittariusyx.github.io/2018/07/22/cuckoo-filter/&text=CuckooFilter详解" target="_blank" rel="noopener"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://sagittariusyx.github.io/2018/07/22/cuckoo-filter/&title=CuckooFilter详解" target="_blank" rel="noopener"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=CuckooFilter详解&body=Check out this article: https://sagittariusyx.github.io/2018/07/22/cuckoo-filter/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2022 yxiao
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m) {i['GoogleAnalyticsObject']=r;i[r]=i[r]||function() {
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-159372775-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>

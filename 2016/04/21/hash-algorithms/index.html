@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="问题背景本题出自Tencent2012笔试题附加题和Baidu2016春招笔试题（运维开发）。 问题描述：例如某网站有n个服务器，为了方便用户的访问会在服务器上缓存数据，因此用户每次访问的时候最好能保持同一台服务器。 已有的做法是根据ServerIPIndex[IpAddr%n]得到请求的服务器，这种方法很方便将用户分到不同的服务器上去。但是如果一台服务器死掉了，那么n就变为了n-1，那么Serv">
+<meta property="og:type" content="article">
+<meta property="og:title" content="一致性哈希算法">
+<meta property="og:url" content="https://sagittariusyx.github.io/2016/04/21/hash-algorithms/index.html">
+<meta property="og:site_name" content="YXiao&#39;s Blog">
+<meta property="og:description" content="问题背景本题出自Tencent2012笔试题附加题和Baidu2016春招笔试题（运维开发）。 问题描述：例如某网站有n个服务器，为了方便用户的访问会在服务器上缓存数据，因此用户每次访问的时候最好能保持同一台服务器。 已有的做法是根据ServerIPIndex[IpAddr%n]得到请求的服务器，这种方法很方便将用户分到不同的服务器上去。但是如果一台服务器死掉了，那么n就变为了n-1，那么Serv">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/hash1.jpg">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/hash2.jpg">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/hash3.jpg">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/hash4.jpg">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/hash5.jpg">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/hash6.jpg">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/hash7.jpg">
+<meta property="article:published_time" content="2016-04-21T14:28:59.000Z">
+<meta property="article:modified_time" content="2020-02-29T10:43:06.000Z">
+<meta property="article:author" content="yxiao">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://sagittariusyx.github.io/images/hash1.jpg">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>一致性哈希算法</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+    <script data-ad-client="ca-pub-9170262800275390" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2016/05/04/kmp-algorithms/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2016/04/02/manacher-algorithms/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://sagittariusyx.github.io/2016/04/21/hash-algorithms/" target="_blank" rel="noopener"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://sagittariusyx.github.io/2016/04/21/hash-algorithms/&text=一致性哈希算法" target="_blank" rel="noopener"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://sagittariusyx.github.io/2016/04/21/hash-algorithms/&title=一致性哈希算法" target="_blank" rel="noopener"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=一致性哈希算法&body=Check out this article: https://sagittariusyx.github.io/2016/04/21/hash-algorithms/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#问题背景"><span class="toc-number">1.</span> <span class="toc-text">问题背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#解决思路"><span class="toc-number">2.</span> <span class="toc-text">解决思路</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#一致性Hash算法简介"><span class="toc-number">3.</span> <span class="toc-text">一致性Hash算法简介</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#算法背景"><span class="toc-number">3.1.</span> <span class="toc-text">算法背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#基本场景"><span class="toc-number">3.2.</span> <span class="toc-text">基本场景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Hash算法和单调性"><span class="toc-number">3.3.</span> <span class="toc-text">Hash算法和单调性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#consistent-hashing算法的原理"><span class="toc-number">3.4.</span> <span class="toc-text">consistent hashing算法的原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#环形空间"><span class="toc-number">3.4.1.</span> <span class="toc-text">环形空间</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#把对象映射到hash空间"><span class="toc-number">3.4.2.</span> <span class="toc-text">把对象映射到hash空间</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#把cache映射到hash空间"><span class="toc-number">3.4.3.</span> <span class="toc-text">把cache映射到hash空间</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#把对象映射到cache"><span class="toc-number">3.4.4.</span> <span class="toc-text">把对象映射到cache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#考察cache的变动"><span class="toc-number">3.4.5.</span> <span class="toc-text">考察cache的变动</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#移除cache"><span class="toc-number">3.4.5.1.</span> <span class="toc-text">移除cache</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#添加cache"><span class="toc-number">3.4.5.2.</span> <span class="toc-text">添加cache</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Hash算法和平衡性"><span class="toc-number">3.5.</span> <span class="toc-text">Hash算法和平衡性</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#虚拟节点"><span class="toc-number">3.5.1.</span> <span class="toc-text">虚拟节点</span></a></li></ol></li></ol></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        一致性哈希算法
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">YXiao's Blog</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2016-04-21T14:28:59.000Z" itemprop="datePublished">2016-04-21</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fas fa-archive"></i>
+        <a class="category-link" href="/categories/Algorithms/">Algorithms</a>
+    </div>
+
+
+      
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="问题背景"><a href="#问题背景" class="headerlink" title="问题背景"></a>问题背景</h1><p>本题出自<strong>Tencent2012笔试题附加题</strong>和<strong>Baidu2016春招笔试题（运维开发）</strong>。</p>
+<p><strong>问题描述：</strong>例如某网站有n个服务器，为了方便用户的访问会在服务器上缓存数据，因此用户每次访问的时候最好能保持同一台服务器。</p>
+<p>已有的做法是根据ServerIPIndex[IpAddr%n]得到请求的服务器，这种方法很方便将用户分到不同的服务器上去。但是如果一台服务器死掉了，那么n就变为了n-1，那么ServerIPIndex[IpAddr%n]与ServerIPIndex[IpAddr%(n-1)]基本上都不一样了，所以大多数用户的请求都会转到其他服务器，这样会发生大量访问错误。</p>
+<p>问： 如何改进或者换一种方法，使得：</p>
+<ol>
+<li>一台服务器死掉后，不会造成大面积的访问错误；</li>
+<li>原有的访问基本还是停留在同一台服务器上；</li>
+<li>尽量考虑负载均衡。</li>
+</ol>
+<h1 id="解决思路"><a href="#解决思路" class="headerlink" title="解决思路"></a>解决思路</h1><ol>
+<li>最直观的办法还是模余方法：假设有N台服务器，现在完好的是M(M&lt;=N)，先用N求模，如果不落在完好的机器上，然后再用N-1求模，直到M。这种方式对于坏的机器不多的情况下，具有更好的稳定性。</li>
+<li>一致性Hash算法。</li>
+</ol>
+<h1 id="一致性Hash算法简介"><a href="#一致性Hash算法简介" class="headerlink" title="一致性Hash算法简介"></a>一致性Hash算法简介</h1><h2 id="算法背景"><a href="#算法背景" class="headerlink" title="算法背景"></a>算法背景</h2><p><a href="https://en.wikipedia.org/wiki/Consistent_hashing" target="_blank" rel="noopener">一致性Hash算法</a>在1997年由麻省理工学院提出的一种分布式哈希（DHT）实现算法，设计目标是为了解决因特网中的热点(Hot spot)问题，初衷和CARP十分类似。一致性哈希修正了CARP使用的简单哈希算法带来的问题，使得分布式哈希（DHT）可以在P2P环境中真正得到应用。</p>
+<h2 id="基本场景"><a href="#基本场景" class="headerlink" title="基本场景"></a>基本场景</h2><p>比如你有N个cache服务器（后面简称cache），那么如何将一个对象object映射到N个cache上呢，你很可能会采用类似下面的通用方法计算object的hash值，然后均匀的映射到到N个cache：</p>
+<pre><code>hash(object) % N</code></pre><p>一切都运行正常，再考虑如下的两种情况：</p>
+<ol>
+<li><p>一个cache服务器m down掉了（在实际应用中必须要考虑这种情况），这样所有映射到cache m的对象都会失效，需要把cache m 从cache中移除，这时候cache是N-1台，映射公式变成了：</p>
+<pre><code>hash(object) % (N-1)</code></pre></li>
+<li><p>由于访问加重，需要添加cache，这时候cache是N+1台，映射公式变成了：</p>
+<pre><code>hash(object) % (N+1)</code></pre></li>
+</ol>
+<p>1和2意味着突然之间几乎所有的cache都失效了。对于服务器而言，这是一场灾难，洪水般的访问都会直接冲向后台服务器；再来考虑第三个问题，由于硬件能力越来越强，你可能想让后面添加的节点多做点活，显然上面的hash算法也做不到。</p>
+<p>有什么方法可以改变这个状况呢，这就是consistent hashing。</p>
+<h2 id="Hash算法和单调性"><a href="#Hash算法和单调性" class="headerlink" title="Hash算法和单调性"></a>Hash算法和单调性</h2><p>Hash 算法的一个衡量指标是单调性（ Monotonicity ），定义如下：</p>
+<p><strong>单调性</strong>是指如果已经有一些内容通过哈希分派到了相应的缓冲中，又有新的缓冲加入到系统中。哈希的结果应能够保证原有已分配的内容可以被映射到新的缓冲中去，而不会被映射到旧的缓冲集合中的其他缓冲区。</p>
+<p>容易看到，上面的简单 hash 算法 <code>hash(object) % N</code> 难以满足单调性要求。</p>
+<h2 id="consistent-hashing算法的原理"><a href="#consistent-hashing算法的原理" class="headerlink" title="consistent hashing算法的原理"></a>consistent hashing算法的原理</h2><p>consistent hashing 是一种 hash 算法，简单的说，在移除 / 添加一个 cache 时，它能够尽可能小的改变已存在 key 映射关系，尽可能的满足单调性的要求。</p>
+<p>下面就来按照 5 个步骤简单讲讲 consistent hashing 算法的基本原理。</p>
+<h3 id="环形空间"><a href="#环形空间" class="headerlink" title="环形空间"></a>环形空间</h3><p>考虑通常的 hash 算法都是将 value 映射到一个 32 为的 key 值，也即是 0~2^32-1 次方的数值空间；我们可以将这个空间想象成一个首（ 0 ）尾（ 2^32-1 ）相接的圆环，如下图所示的那样。</p>
+<p><img src="/images/hash1.jpg" alt="hash1"></p>
+<h3 id="把对象映射到hash空间"><a href="#把对象映射到hash空间" class="headerlink" title="把对象映射到hash空间"></a>把对象映射到hash空间</h3><p>接下来考虑 4 个对象 object1~object4 ，通过 hash 函数计算出的 hash 值 key 在环上的分布如图所示。</p>
+<pre><code>hash(object1) = key1;
+……
+hash(object4) = key4;</code></pre><p><img src="/images/hash2.jpg" alt="hash2"></p>
+<h3 id="把cache映射到hash空间"><a href="#把cache映射到hash空间" class="headerlink" title="把cache映射到hash空间"></a>把cache映射到hash空间</h3><p>Consistent hashing 的基本思想就是将对象和 cache 都映射到同一个 hash 数值空间中，并且使用相同的 hash 算法。</p>
+<p>假设当前有 A,B 和 C 共 3 台 cache ，那么其映射结果将如图 3 所示，他们在 hash 空间中，以对应的 hash 值排列。</p>
+<pre><code>hash(cache A) = key A;
+……
+hash(cache C) = key C;</code></pre><p><img src="/images/hash3.jpg" alt="hash3"></p>
+<p>说到这里，顺便提一下 cache 的 hash 计算，一般的方法可以使用 cache 机器的 IP 地址或者机器名作为 hash 输入。</p>
+<h3 id="把对象映射到cache"><a href="#把对象映射到cache" class="headerlink" title="把对象映射到cache"></a>把对象映射到cache</h3><p>现在 cache 和对象都已经通过同一个 hash 算法映射到 hash 数值空间中了，接下来要考虑的就是如何将对象映射到 cache 上面了。</p>
+<p>在这个环形空间中，如果沿着顺时针方向从对象的 key 值出发，直到遇见一个 cache ，那么就将该对象存储在这个 cache 上，因为对象和 cache 的 hash 值是固定的，因此这个 cache 必然是唯一和确定的。这样不就找到了对象和 cache 的映射方法了吗？！</p>
+<p>依然继续上面的例子，那么根据上面的方法，对象 object1 将被存储到 cache A 上； object2和 object3 对应到 cache C ； object4 对应到 cache B ；</p>
+<h3 id="考察cache的变动"><a href="#考察cache的变动" class="headerlink" title="考察cache的变动"></a>考察cache的变动</h3><p>前面讲过，通过 hash 然后求余的方法带来的最大问题就在于不能满足单调性，当 cache 有所变动时，cache 会失效，进而对后台服务器造成巨大的冲击，现在就来分析分析 consistent hashing 算法。</p>
+<h4 id="移除cache"><a href="#移除cache" class="headerlink" title="移除cache"></a>移除cache</h4><p>考虑假设 cache B 挂掉了，根据上面讲到的映射方法，这时受影响的将仅是那些沿 cache B 逆时针遍历直到下一个 cache （ cache C ）之间的对象，也即是本来映射到 cache B 上的那些对象。</p>
+<p>因此这里仅需要变动对象 object4 ，将其重新映射到 cache C 上即可；参见下图。</p>
+<p><img src="/images/hash4.jpg" alt="hash4"></p>
+<h4 id="添加cache"><a href="#添加cache" class="headerlink" title="添加cache"></a>添加cache</h4><p>再考虑添加一台新的 cache D 的情况，假设在这个环形 hash 空间中， cache D 被映射在对象 object2 和object3 之间。这时受影响的将仅是那些沿 cache D 逆时针遍历直到下一个 cache （ cache B ）之间的对象（它们是也本来映射到 cache C 上对象的一部分），将这些对象重新映射到 cache D 上即可。</p>
+<p>因此这里仅需要变动对象 object2 ，将其重新映射到 cache D 上；参见下图。</p>
+<p><img src="/images/hash5.jpg" alt="hash5"></p>
+<h2 id="Hash算法和平衡性"><a href="#Hash算法和平衡性" class="headerlink" title="Hash算法和平衡性"></a>Hash算法和平衡性</h2><p>考量 Hash 算法的另一个指标是平衡性 (Balance) ，定义如下：</p>
+<blockquote>
+<p><strong>平衡性</strong>是指哈希的结果能够尽可能分布到所有的缓冲中去，这样可以使得所有的缓冲空间都得到利用。</p>
+</blockquote>
+<p>hash 算法并不是保证绝对的平衡，如果 cache 较少的话，对象并不能被均匀的映射到 cache 上，比如在上面的例子中，仅部署 cache A 和 cache C 的情况下，在 4 个对象中， cache A 仅存储了 object1 ，而 cache C 则存储了 object2 、 object3 和 object4 ；分布是很不均衡的。</p>
+<h3 id="虚拟节点"><a href="#虚拟节点" class="headerlink" title="虚拟节点"></a>虚拟节点</h3><p>为了解决这种情况， consistent hashing 引入了“虚拟节点”的概念，它可以如下定义：</p>
+<p>“虚拟节点”（ virtual node ）是实际节点在 hash 空间的复制品（ replica ），一实际个节点对应了若干个“虚拟节点”，这个对应个数也成为“复制个数”，“虚拟节点”在 hash 空间中以 hash 值排列。</p>
+<p>仍以仅部署 cache A 和 cache C 的情况为例，在图 4 中我们已经看到， cache 分布并不均匀。现在我们引入虚拟节点，并设置“复制个数”为 2 ，这就意味着一共会存在 4 个“虚拟节点”， cache A1, cache A2 代表了 cache A ； cache C1, cache C2 代表了 cache C ；假设一种比较理想的情况，参见下图。</p>
+<p><img src="/images/hash6.jpg" alt="hash6"></p>
+<p>此时，对象到“虚拟节点”的映射关系为：</p>
+<pre><code>objec1-&gt;cache A2 ；
+objec2-&gt;cache A1 ；
+objec3-&gt;cache C1 ；
+objec4-&gt;cache C2 ；</code></pre><p>因此对象 object1 和 object2 都被映射到了 cache A 上，而 object3 和 object4 映射到了 cache C 上；平衡性有了很大提高。</p>
+<p>引入“虚拟节点”后，映射关系就从 <code>{ 对象 -&gt; 节点 }</code> 转换到了 <code>{ 对象 -&gt; 虚拟节点 }</code> 。查询物体所在 cache时的映射关系如下图所示。</p>
+<p><img src="/images/hash7.jpg" alt="hash7"></p>
+<p>“虚拟节点”的 hash 计算可以采用对应节点的 IP 地址加数字后缀的方式。例如假设 cache A 的 IP 地址为202.168.14.241 。</p>
+<p>引入“虚拟节点”前，计算 cache A 的 hash 值：</p>
+<pre><code>Hash(“202.168.14.241”);</code></pre><p>引入“虚拟节点”后，计算“虚拟节”点 cache A1 和 cache A2 的 hash 值：</p>
+<pre><code>Hash(“202.168.14.241#1”); // cache A1
+Hash(“202.168.14.241#2”); // cache A2</code></pre>
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#问题背景"><span class="toc-number">1.</span> <span class="toc-text">问题背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#解决思路"><span class="toc-number">2.</span> <span class="toc-text">解决思路</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#一致性Hash算法简介"><span class="toc-number">3.</span> <span class="toc-text">一致性Hash算法简介</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#算法背景"><span class="toc-number">3.1.</span> <span class="toc-text">算法背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#基本场景"><span class="toc-number">3.2.</span> <span class="toc-text">基本场景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Hash算法和单调性"><span class="toc-number">3.3.</span> <span class="toc-text">Hash算法和单调性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#consistent-hashing算法的原理"><span class="toc-number">3.4.</span> <span class="toc-text">consistent hashing算法的原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#环形空间"><span class="toc-number">3.4.1.</span> <span class="toc-text">环形空间</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#把对象映射到hash空间"><span class="toc-number">3.4.2.</span> <span class="toc-text">把对象映射到hash空间</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#把cache映射到hash空间"><span class="toc-number">3.4.3.</span> <span class="toc-text">把cache映射到hash空间</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#把对象映射到cache"><span class="toc-number">3.4.4.</span> <span class="toc-text">把对象映射到cache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#考察cache的变动"><span class="toc-number">3.4.5.</span> <span class="toc-text">考察cache的变动</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#移除cache"><span class="toc-number">3.4.5.1.</span> <span class="toc-text">移除cache</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#添加cache"><span class="toc-number">3.4.5.2.</span> <span class="toc-text">添加cache</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Hash算法和平衡性"><span class="toc-number">3.5.</span> <span class="toc-text">Hash算法和平衡性</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#虚拟节点"><span class="toc-number">3.5.1.</span> <span class="toc-text">虚拟节点</span></a></li></ol></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://sagittariusyx.github.io/2016/04/21/hash-algorithms/" target="_blank" rel="noopener"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://sagittariusyx.github.io/2016/04/21/hash-algorithms/&text=一致性哈希算法" target="_blank" rel="noopener"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://sagittariusyx.github.io/2016/04/21/hash-algorithms/&title=一致性哈希算法" target="_blank" rel="noopener"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=一致性哈希算法&body=Check out this article: https://sagittariusyx.github.io/2016/04/21/hash-algorithms/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2022 yxiao
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m) {i['GoogleAnalyticsObject']=r;i[r]=i[r]||function() {
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-159372775-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="基本的垃圾回收算法引用计数（Reference Counting）比较古老的回收算法。原理是此对象有一个引用，则增加一个计数，删除一个引用则减少一个计数。垃圾回收时，只用收集计数为0的对象。 此算法最致命的是无法处理循环引用的问题。 标记-清除（Mark-Sweep） 此算法执行分两阶段。第一阶段从引用根节点开始标记所有被引用的对象，第二阶段遍历整个堆，把未标记的对象清除。 缺点是此算法需要暂停整">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JVM调优（二） - 基本垃圾回收算法和垃圾收集器">
+<meta property="og:url" content="https://sagittariusyx.github.io/2017/08/25/jvm-GC-algorithms/index.html">
+<meta property="og:site_name" content="YXiao&#39;s Blog">
+<meta property="og:description" content="基本的垃圾回收算法引用计数（Reference Counting）比较古老的回收算法。原理是此对象有一个引用，则增加一个计数，删除一个引用则减少一个计数。垃圾回收时，只用收集计数为0的对象。 此算法最致命的是无法处理循环引用的问题。 标记-清除（Mark-Sweep） 此算法执行分两阶段。第一阶段从引用根节点开始标记所有被引用的对象，第二阶段遍历整个堆，把未标记的对象清除。 缺点是此算法需要暂停整">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/mark_sweep.jpg">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/copying.jpg">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/mark_compact.jpg">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/marking.jpg">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/normal_deletion.jpg">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/deletion_with_compacting.jpg">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/GC_performance.jpg">
+<meta property="article:published_time" content="2017-08-25T13:34:07.000Z">
+<meta property="article:modified_time" content="2020-02-29T10:49:16.000Z">
+<meta property="article:author" content="yxiao">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://sagittariusyx.github.io/images/mark_sweep.jpg">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>JVM调优（二） - 基本垃圾回收算法和垃圾收集器</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+    <script data-ad-client="ca-pub-9170262800275390" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2017/08/27/jvm-GC-problems/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2017/08/17/jvm-optimization-base-intro/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://sagittariusyx.github.io/2017/08/25/jvm-GC-algorithms/" target="_blank" rel="noopener"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://sagittariusyx.github.io/2017/08/25/jvm-GC-algorithms/&text=JVM调优（二） - 基本垃圾回收算法和垃圾收集器" target="_blank" rel="noopener"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://sagittariusyx.github.io/2017/08/25/jvm-GC-algorithms/&title=JVM调优（二） - 基本垃圾回收算法和垃圾收集器" target="_blank" rel="noopener"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=JVM调优（二） - 基本垃圾回收算法和垃圾收集器&body=Check out this article: https://sagittariusyx.github.io/2017/08/25/jvm-GC-algorithms/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#基本的垃圾回收算法"><span class="toc-number">1.</span> <span class="toc-text">基本的垃圾回收算法</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#引用计数（Reference-Counting）"><span class="toc-number">1.1.</span> <span class="toc-text">引用计数（Reference Counting）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#标记-清除（Mark-Sweep）"><span class="toc-number">1.2.</span> <span class="toc-text">标记-清除（Mark-Sweep）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#复制（Copying）"><span class="toc-number">1.3.</span> <span class="toc-text">复制（Copying）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#标记-整理（Mark-Compact）"><span class="toc-number">1.4.</span> <span class="toc-text">标记-整理（Mark-Compact）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#分代GC"><span class="toc-number">1.5.</span> <span class="toc-text">分代GC</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#垃圾收集器"><span class="toc-number">2.</span> <span class="toc-text">垃圾收集器</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#自动垃圾收集机制"><span class="toc-number">2.1.</span> <span class="toc-text">自动垃圾收集机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#步骤一：标记"><span class="toc-number">2.1.1.</span> <span class="toc-text">步骤一：标记</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#步骤二（a）：正常删除"><span class="toc-number">2.1.2.</span> <span class="toc-text">步骤二（a）：正常删除</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#步骤二（b）：带压缩删除"><span class="toc-number">2.1.3.</span> <span class="toc-text">步骤二（b）：带压缩删除</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM垃圾收集器种类"><span class="toc-number">2.2.</span> <span class="toc-text">JVM垃圾收集器种类</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#串行（Serial）收集器"><span class="toc-number">2.2.1.</span> <span class="toc-text">串行（Serial）收集器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#并行（Parallel）收集器"><span class="toc-number">2.2.2.</span> <span class="toc-text">并行（Parallel）收集器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#并发标记清理（CMS）收集器"><span class="toc-number">2.2.3.</span> <span class="toc-text">并发标记清理（CMS）收集器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#G1垃圾收集器"><span class="toc-number">2.2.4.</span> <span class="toc-text">G1垃圾收集器</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Java-8各种垃圾收集器比较"><span class="toc-number">3.</span> <span class="toc-text">Java 8各种垃圾收集器比较</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#实验"><span class="toc-number">3.1.</span> <span class="toc-text">实验</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#结论"><span class="toc-number">3.2.</span> <span class="toc-text">结论</span></a></li></ol></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        JVM调优（二） - 基本垃圾回收算法和垃圾收集器
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">YXiao's Blog</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2017-08-25T13:34:07.000Z" itemprop="datePublished">2017-08-25</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fas fa-archive"></i>
+        <a class="category-link" href="/categories/Java/">Java</a> › <a class="category-link" href="/categories/Java/JVM/">JVM</a> › <a class="category-link" href="/categories/Java/JVM/GC/">GC</a>
+    </div>
+
+
+      
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="基本的垃圾回收算法"><a href="#基本的垃圾回收算法" class="headerlink" title="基本的垃圾回收算法"></a>基本的垃圾回收算法</h1><h2 id="引用计数（Reference-Counting）"><a href="#引用计数（Reference-Counting）" class="headerlink" title="引用计数（Reference Counting）"></a>引用计数（Reference Counting）</h2><p>比较古老的回收算法。原理是此对象有一个引用，则增加一个计数，删除一个引用则减少一个计数。垃圾回收时，只用收集计数为0的对象。</p>
+<p>此算法最致命的是无法处理<strong>循环引用</strong>的问题。</p>
+<h2 id="标记-清除（Mark-Sweep）"><a href="#标记-清除（Mark-Sweep）" class="headerlink" title="标记-清除（Mark-Sweep）"></a>标记-清除（Mark-Sweep）</h2><p><img src="/images/mark_sweep.jpg" alt="mark_sweep"></p>
+<p>此算法执行分两阶段。第一阶段从引用根节点开始标记所有被引用的对象，第二阶段遍历整个堆，把未标记的对象清除。</p>
+<p>缺点是此算法需要<strong>暂停整个应用</strong>，同时，会产生<strong>内存碎片</strong>。</p>
+<h2 id="复制（Copying）"><a href="#复制（Copying）" class="headerlink" title="复制（Copying）"></a>复制（Copying）</h2><p><img src="/images/copying.jpg" alt="copying"></p>
+<p>此算法把内存空间划为两个相等的区域，每次只使用其中一个区域。垃圾回收时，遍历当前使用区域，把正在使用中的对象复制到另外一个区域中。次算法每次只处理正在使用中的对象，因此复制成本比较小，同时复制过去以后还能进行相应的内存整理，不会出现“碎片”问题。</p>
+<p>当然，此算法的缺点也是很明显的，就是需要<strong>两倍内存空间</strong>。</p>
+<h2 id="标记-整理（Mark-Compact）"><a href="#标记-整理（Mark-Compact）" class="headerlink" title="标记-整理（Mark-Compact）"></a>标记-整理（Mark-Compact）</h2><p><img src="/images/mark_compact.jpg" alt="mark_compact"></p>
+<p>此算法结合了“标记-清除”和“复制”两个算法的优点。也是分两阶段，第一阶段从根节点开始标记所有被引用对象，第二阶段遍历整个堆，把清除未标记对象并且把存活对象“压缩”到堆的其中一块，按顺序排放。此算法避免了“标记-清除”的碎片问题，同时也避免了“复制”算法的空间问题。</p>
+<p>但标记-整理算法唯一的缺点就是<strong>效率不高</strong>，不仅要标记所有存活对象，还要整理所有存活对象的引用地址。从效率上来说，标记/整理算法要低于复制算法。</p>
+<h2 id="分代GC"><a href="#分代GC" class="headerlink" title="分代GC"></a>分代GC</h2><p>以上算法各有缺陷，最终，大神们找到了一个GC算法中的神级算法 – 分代GC，详见<a href="https://sagittariusyx.github.io/2017/04/10/jvm-generation-GC/">分代GC详述</a>。</p>
+<h1 id="垃圾收集器"><a href="#垃圾收集器" class="headerlink" title="垃圾收集器"></a>垃圾收集器</h1><h2 id="自动垃圾收集机制"><a href="#自动垃圾收集机制" class="headerlink" title="自动垃圾收集机制"></a>自动垃圾收集机制</h2><p>自动垃圾收集机制是查看堆内存、区分在使用的对象和未使用的对象、删除未使用的对象的一个过程。对于使用对象或者引用对象，指的是你的程序持有一个指向那个对象的引用。对于未使用的对象或者是无引用对象，则不被你程序的任何部分持有引用。所以，无引用对象使用的内存是可以被重新回收利用的。</p>
+<p>在类C语言的编程语言中，内存的分配和回收都是手动的。而在Java中，内存的回收是由垃圾回收器自动处理的。基本的步骤可以描述如下：</p>
+<h3 id="步骤一：标记"><a href="#步骤一：标记" class="headerlink" title="步骤一：标记"></a>步骤一：标记</h3><p>第一步是标记，通过这一步骤来区分哪块内存在使用，那哪块内存未使用。</p>
+<p><img src="/images/marking.jpg" alt="marking"></p>
+<p>引用对象用蓝色标识，未引用的对象用金色标识。在标记阶段，扫描所有的对象并判断。如果系统中所有的对象都要被扫描的，那么这一步骤可能非常耗时。</p>
+<h3 id="步骤二（a）：正常删除"><a href="#步骤二（a）：正常删除" class="headerlink" title="步骤二（a）：正常删除"></a>步骤二（a）：正常删除</h3><p>正常删除移除无引用对象，留下引用对象及指向空闲空间的指针。</p>
+<p><img src="/images/normal_deletion.jpg" alt="normal_deletion"></p>
+<p>内存分配器持有空闲内存的引用，这些空闲内存都链接到一个List中，当需要的时候可以分配给新的对象。</p>
+<h3 id="步骤二（b）：带压缩删除"><a href="#步骤二（b）：带压缩删除" class="headerlink" title="步骤二（b）：带压缩删除"></a>步骤二（b）：带压缩删除</h3><p>为了进一步改善性能，除了删除未引用的对象，用户也可以压缩存活的引用对象。把引用对象移动到一起，通过这种方法可以使更快速、更方便的分配新的内存。</p>
+<p><img src="/images/deletion_with_compacting.jpg" alt="deletion_with_compacting"></p>
+<h2 id="JVM垃圾收集器种类"><a href="#JVM垃圾收集器种类" class="headerlink" title="JVM垃圾收集器种类"></a>JVM垃圾收集器种类</h2><p>现在我们已经知道垃圾收集器的一些基本原理。本节将会详细讲解Java可以使用的垃圾回收器，以及在命令行如何选用配置它们。配置JVM有很多可以用的命令行参数，本节选用常用的配置参数进行详细解。</p>
+<p><strong>与堆配置相关的命令行参数</strong></p>
+<table>
+<thead>
+<tr>
+<th align="left">参数</th>
+<th align="left">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">-Xms</td>
+<td align="left">JVM启动的时候设置初始堆的大小</td>
+</tr>
+<tr>
+<td align="left">-Xmx</td>
+<td align="left">设置最大堆的大小</td>
+</tr>
+<tr>
+<td align="left">-Xmn</td>
+<td align="left">设置年轻代的大小</td>
+</tr>
+<tr>
+<td align="left">-XX:PermSize</td>
+<td align="left">设置持久代的初始大小</td>
+</tr>
+<tr>
+<td align="left">-XX:MaxPermSize</td>
+<td align="left">设置持久代的最大值</td>
+</tr>
+</tbody></table>
+<h3 id="串行（Serial）收集器"><a href="#串行（Serial）收集器" class="headerlink" title="串行（Serial）收集器"></a>串行（Serial）收集器</h3><p>在Java SE 5和6中，Serial收集器是客户端环境机器的默认设置。在这种情况下，小垃圾收集和大垃圾收集都是串行进行的（使用单个的虚拟CPU）。</p>
+<p><strong>使用的算法：</strong></p>
+<p>串行收集器在年轻代使用的是<strong>拷贝算法</strong>，这个算法比较简单，在这里不做详述。而年老代和持久代使用<strong>标记-清扫-压缩（mark-sweep-compact）算法</strong>。</p>
+<p>标记阶段，收集器识别哪些对象仍然活着。清扫阶段“扫荡”整个代，识别垃圾。之后，收集器执行平移压缩（sliding compaction），将存活的对象平移到代的前端（持久代类似），相应的在尾部留下一整块连续的空闲空间。压缩后，以后的分配就可以在年老代和持久代使用空闲指针（bump-the-pointer）技术。这种压缩算法能够在堆上迅速分配内存块。</p>
+<p>在有大量JVM运行在同一个机器上（在某些情况下，JVM的个数比可以用的处理器的个数多）的应用环境下，串行垃圾收集器也被广泛使用。在这种环境下，要进行垃圾回收的JVM最好使用一个处理器，虽然这样会使垃圾回收的时间变得更长，但可以降低与其他JVM的冲突。这时，使用串行垃圾回收器能够获得很好的权衡。最后，如果在较小的内存和较少的CPU核心上对硬件进行稍加扩充，将能获得更好的性能。</p>
+<p><strong>命令行参数：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-XX:+UseSerialGC</span><br></pre></td></tr></table></figure>
+
+<h3 id="并行（Parallel）收集器"><a href="#并行（Parallel）收集器" class="headerlink" title="并行（Parallel）收集器"></a>并行（Parallel）收集器</h3><p>并行垃圾收集器在年轻代使用多线程进行垃圾回收。默认情况下，在N个CPU的主机上，并行垃圾收集器使用N个垃圾收集器线程进行垃圾回收。垃圾收集器线程的个数可以在命令行进行设置：-XX:ParallelGCThreads=&lt;期望的数值&gt;</p>
+<p><strong>使用的算法：</strong></p>
+<p>年轻代：与Serial垃圾收集器年轻代相同的<strong>拷贝算法</strong>，只不过是该算法的并行版本，使用多个CPU并行的运行，减少了垃圾收集的开销，因此增加了吞吐量。</p>
+<p>年老代：与Serial垃圾收集器老年代相同的<strong>标记-清扫-压缩（mark-sweepcompact）算法</strong>，只不过是该算法的并行版本。</p>
+<p><strong>命令行参数：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-XX:+UseParallelGC</span><br></pre></td></tr></table></figure>
+
+<p>使用这个命令行参数，就会将年轻代设置为多线程的收集器，老年代使用单线程的收集器。该选项还会在老年代进行单线程的压缩工作。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-XX:+UseParallelOldGC</span><br></pre></td></tr></table></figure>
+
+<p>使用该参数，年轻代和老年代都会使用多线程的收集器，同时，也使用多线程的压缩收集器。HotSpot仅仅在老年代进行整理，在年轻代是一个复制收集器，因此没必要进行整理。</p>
+<p><strong>压缩</strong>描述的是这样一种行为：移动对象使得个对象之间没有空闲位置。再一次垃圾收集的清理之后，存活对象在内存中的存储位置之间可能存在空闲区。整理移动对象，使得对象的存储都是顺序的，彼此之间没有空闲区。垃圾收集器可能也是一个不带压缩的收集器。所以，<strong>并行收集器和并行压缩收集器</strong>之间的区别就是后者在垃圾收集清理操作之后，对内存空间进行一次整理。</p>
+<h3 id="并发标记清理（CMS）收集器"><a href="#并发标记清理（CMS）收集器" class="headerlink" title="并发标记清理（CMS）收集器"></a>并发标记清理（CMS）收集器</h3><p>并发标记清理收集器（CMS，又叫作并发低暂停收集器）在<strong>老年代</strong>进行收集。由于垃圾收集能使用应用线程的并发进行大多数的垃圾收集工作，所以它降低了应用程序的暂停时间。</p>
+<p>正常说来，并发低暂停的收集器对存活对象不进行复制和压缩的工作。这种情况下，垃圾收集器没有移动任何存活对象。如果因此而带来了内存的碎片问题，那就为其分配一个更大的堆。</p>
+<p>注意：<strong>CMS收集器在年轻代使用和并行收集器一样的算法。</strong></p>
+<p><strong>命令行参数：</strong></p>
+<p>如果要使用CMS收集器，使用：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-XX:+UseConcMarkSweepGC</span><br></pre></td></tr></table></figure>
+
+<p>同时，可以设置并发的线程数目：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-XX:ParallelCMSThreads&#x3D;&lt;n&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="G1垃圾收集器"><a href="#G1垃圾收集器" class="headerlink" title="G1垃圾收集器"></a>G1垃圾收集器</h3><p>在Java 7中可以使用G1垃圾回收器，它设计的初衷是用于长期取代CMS收集器。G1垃圾收集器是一个并行、并发，同时也是基于增量整理的低暂停垃圾收集器。与前面所描述的垃圾收集器相比，从布局方面与它们有很大的不同，本文不对该部分做详细的说明。</p>
+<p><strong>命令行参数：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-XX:+UseG1GC</span><br></pre></td></tr></table></figure>
+
+<h1 id="Java-8各种垃圾收集器比较"><a href="#Java-8各种垃圾收集器比较" class="headerlink" title="Java 8各种垃圾收集器比较"></a>Java 8各种垃圾收集器比较</h1><h2 id="实验"><a href="#实验" class="headerlink" title="实验"></a>实验</h2><p>OpenJDK 8 有多种 GC（Garbage Collector）算法，如 Parallel GC、CMS 和 G1。哪一个才是最快的呢？如果在 Java 9 中将 Java 8 默认的 GC 从 Parallel GC 改为 G1 （目前只是建议）将会怎么样呢？让我们对此进行基准测试。</p>
+<p>为了方便查看，我已经对每种 GC 与 Java 8 默认 GC（Parallel GC）进行了比较。</p>
+<p><img src="/images/GC_performance.jpg" alt="GC_performance"></p>
+<p>结果非常清楚：默认（Parallel GC）是最快的。</p>
+<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>在 Java 8 中，对 OptaPlanner 用例来说，默认 GC（Parallel GC）通常情况是最好的选择。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#基本的垃圾回收算法"><span class="toc-number">1.</span> <span class="toc-text">基本的垃圾回收算法</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#引用计数（Reference-Counting）"><span class="toc-number">1.1.</span> <span class="toc-text">引用计数（Reference Counting）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#标记-清除（Mark-Sweep）"><span class="toc-number">1.2.</span> <span class="toc-text">标记-清除（Mark-Sweep）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#复制（Copying）"><span class="toc-number">1.3.</span> <span class="toc-text">复制（Copying）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#标记-整理（Mark-Compact）"><span class="toc-number">1.4.</span> <span class="toc-text">标记-整理（Mark-Compact）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#分代GC"><span class="toc-number">1.5.</span> <span class="toc-text">分代GC</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#垃圾收集器"><span class="toc-number">2.</span> <span class="toc-text">垃圾收集器</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#自动垃圾收集机制"><span class="toc-number">2.1.</span> <span class="toc-text">自动垃圾收集机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#步骤一：标记"><span class="toc-number">2.1.1.</span> <span class="toc-text">步骤一：标记</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#步骤二（a）：正常删除"><span class="toc-number">2.1.2.</span> <span class="toc-text">步骤二（a）：正常删除</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#步骤二（b）：带压缩删除"><span class="toc-number">2.1.3.</span> <span class="toc-text">步骤二（b）：带压缩删除</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM垃圾收集器种类"><span class="toc-number">2.2.</span> <span class="toc-text">JVM垃圾收集器种类</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#串行（Serial）收集器"><span class="toc-number">2.2.1.</span> <span class="toc-text">串行（Serial）收集器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#并行（Parallel）收集器"><span class="toc-number">2.2.2.</span> <span class="toc-text">并行（Parallel）收集器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#并发标记清理（CMS）收集器"><span class="toc-number">2.2.3.</span> <span class="toc-text">并发标记清理（CMS）收集器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#G1垃圾收集器"><span class="toc-number">2.2.4.</span> <span class="toc-text">G1垃圾收集器</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Java-8各种垃圾收集器比较"><span class="toc-number">3.</span> <span class="toc-text">Java 8各种垃圾收集器比较</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#实验"><span class="toc-number">3.1.</span> <span class="toc-text">实验</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#结论"><span class="toc-number">3.2.</span> <span class="toc-text">结论</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://sagittariusyx.github.io/2017/08/25/jvm-GC-algorithms/" target="_blank" rel="noopener"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://sagittariusyx.github.io/2017/08/25/jvm-GC-algorithms/&text=JVM调优（二） - 基本垃圾回收算法和垃圾收集器" target="_blank" rel="noopener"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://sagittariusyx.github.io/2017/08/25/jvm-GC-algorithms/&title=JVM调优（二） - 基本垃圾回收算法和垃圾收集器" target="_blank" rel="noopener"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=JVM调优（二） - 基本垃圾回收算法和垃圾收集器&body=Check out this article: https://sagittariusyx.github.io/2017/08/25/jvm-GC-algorithms/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2022 yxiao
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m) {i['GoogleAnalyticsObject']=r;i[r]=i[r]||function() {
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-159372775-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>
