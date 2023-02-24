@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="背景在任何一个稍微复杂的后台系统中，异步任务总是无法避免的，其具有松耦合、易扩展的特性。我当前开发使用的语言是Golang，需要类似python下的celery，PHP中laraval框架的Queues等异步任务框架或任务队列系统。 异步框架Machinery简介简介Machinery是一个第三方开源的基于分布式消息分发的异步任务队列，有着以下特性：  任务重试机制 延迟任务支持 任务回调机制 任">
+<meta property="og:type" content="article">
+<meta property="og:title" content="异步任务框架Machinery简介及工程实践">
+<meta property="og:url" content="https://sagittariusyx.github.io/2021/09/24/machinery-framework-tutorial/index.html">
+<meta property="og:site_name" content="YXiao&#39;s Blog">
+<meta property="og:description" content="背景在任何一个稍微复杂的后台系统中，异步任务总是无法避免的，其具有松耦合、易扩展的特性。我当前开发使用的语言是Golang，需要类似python下的celery，PHP中laraval框架的Queues等异步任务框架或任务队列系统。 异步框架Machinery简介简介Machinery是一个第三方开源的基于分布式消息分发的异步任务队列，有着以下特性：  任务重试机制 延迟任务支持 任务回调机制 任">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/machinery-workflow.png">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/machinery-state-flow.png">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/dataset-delete-workflow.png">
+<meta property="article:published_time" content="2021-09-24T08:09:10.000Z">
+<meta property="article:modified_time" content="2023-02-24T08:28:20.109Z">
+<meta property="article:author" content="yxiao">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://sagittariusyx.github.io/images/machinery-workflow.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>异步任务框架Machinery简介及工程实践</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+    <script data-ad-client="ca-pub-9170262800275390" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2022/03/24/golang-gohive/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2021/07/22/cuckoo-filter/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://sagittariusyx.github.io/2021/09/24/machinery-framework-tutorial/" target="_blank" rel="noopener"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://sagittariusyx.github.io/2021/09/24/machinery-framework-tutorial/&text=异步任务框架Machinery简介及工程实践" target="_blank" rel="noopener"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://sagittariusyx.github.io/2021/09/24/machinery-framework-tutorial/&title=异步任务框架Machinery简介及工程实践" target="_blank" rel="noopener"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=异步任务框架Machinery简介及工程实践&body=Check out this article: https://sagittariusyx.github.io/2021/09/24/machinery-framework-tutorial/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#背景"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#异步框架Machinery简介"><span class="toc-number">2.</span> <span class="toc-text">异步框架Machinery简介</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#简介"><span class="toc-number">2.1.</span> <span class="toc-text">简介</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#组件构成"><span class="toc-number">2.2.</span> <span class="toc-text">组件构成</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#工作流程"><span class="toc-number">2.3.</span> <span class="toc-text">工作流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#状态维护"><span class="toc-number">2.4.</span> <span class="toc-text">状态维护</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#工程应用"><span class="toc-number">3.</span> <span class="toc-text">工程应用</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#异步任务场景"><span class="toc-number">3.1.</span> <span class="toc-text">异步任务场景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Machinery实践应用"><span class="toc-number">3.2.</span> <span class="toc-text">Machinery实践应用</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#异步删除流程图"><span class="toc-number">3.2.1.</span> <span class="toc-text">异步删除流程图</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Server端代码示例"><span class="toc-number">3.2.2.</span> <span class="toc-text">Server端代码示例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Worker端代码示例"><span class="toc-number">3.2.3.</span> <span class="toc-text">Worker端代码示例</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#总结"><span class="toc-number">4.</span> <span class="toc-text">总结</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        异步任务框架Machinery简介及工程实践
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">YXiao's Blog</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2021-09-24T08:09:10.000Z" itemprop="datePublished">2021-09-24</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fas fa-archive"></i>
+        <a class="category-link" href="/categories/Golang/">Golang</a> › <a class="category-link" href="/categories/Golang/Machinery/">Machinery</a>
+    </div>
+
+
+      
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>在任何一个稍微复杂的后台系统中，异步任务总是无法避免的，其具有松耦合、易扩展的特性。我当前开发使用的语言是Golang，需要类似python下的celery，PHP中laraval框架的Queues等异步任务框架或任务队列系统。</p>
+<h1 id="异步框架Machinery简介"><a href="#异步框架Machinery简介" class="headerlink" title="异步框架Machinery简介"></a>异步框架Machinery简介</h1><h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p><a href="https://github.com/RichardKnop/machinery" target="_blank" rel="noopener">Machinery</a>是一个第三方开源的基于分布式消息分发的异步任务队列，有着以下特性：</p>
+<ul>
+<li>任务重试机制</li>
+<li>延迟任务支持</li>
+<li>任务回调机制</li>
+<li>任务结果记录</li>
+<li>支持Workflow模式：Chain，Group，Chord</li>
+<li>多Brokers支持：Redis, AMQP, <a href="https://aws.amazon.com/cn/sqs/" target="_blank" rel="noopener">AWS SQS</a></li>
+<li>多Backends支持：Redis, Memcache, AMQP, <a href="https://cloud.tencent.com/product/mongodb?from=10680" target="_blank" rel="noopener">MongoDB</a></li>
+</ul>
+<p>当前Machinery在v1 stable版本，作者在文档中说明“请注意使用V2版本直到其准备完成为止，因为V2正在开发之中且有可能发生重大更改”，所以在实际项目中，我们也是采用v1稳定版本。可以通过<code>go get github.com/RichardKnop/machinery/v1</code>获取。</p>
+<h2 id="组件构成"><a href="#组件构成" class="headerlink" title="组件构成"></a>组件构成</h2><p>Machinery中的各个组件，组成了一个放大的“生产者-消费者”模型，由服务端生成任务并放进队列中，由执行端充当消费者从队列中领取任务并执行，框架由以下组件和概念构成：</p>
+<ul>
+<li>Server：处理客户端同步请求，并生成异步任务，放置进任务队列；</li>
+<li>Worker：工作线程，从任务队列中消费任务并执行；</li>
+<li>Broker：任务队列，存储序列化后的任务，支持多种类型如Redis, AMQP, <a href="https://aws.amazon.com/cn/sqs/" target="_blank" rel="noopener">AWS SQS</a>；</li>
+<li>Backend：后端存储，存储任务执行状态和结果，支持多种类型如Redis, Memcache, AMQP, <a href="https://cloud.tencent.com/product/mongodb?from=10680" target="_blank" rel="noopener">MongoDB</a>；</li>
+<li>Signature：任务实体，用来描述任务的执行过程、所需参数等信息。</li>
+</ul>
+<h2 id="工作流程"><a href="#工作流程" class="headerlink" title="工作流程"></a>工作流程</h2><p><img src="/images/machinery-workflow.png" alt="machinery-workflow"></p>
+<p>基本的工作流程如下：</p>
+<ol>
+<li>由server生成并发布任务，推送到broker中；</li>
+<li>worker通过key向broker订阅任务，当key相同的任务到达时，worker消费任务；</li>
+<li>worker执行任务；</li>
+<li>worker将执行结果（SUCCESS、FAILURE）存储至backend。</li>
+</ol>
+<h2 id="状态维护"><a href="#状态维护" class="headerlink" title="状态维护"></a>状态维护</h2><p>Machinery中每个任务状态有PENDING、RECEIVED、STARTED、RETRY、SUCCESS和FAILURE几种，任务在生成和处理的不同阶段状态不同：</p>
+<ol>
+<li>server插入任务时状态为PENDING；</li>
+<li>worker收到任务时状态为RECEIVED；</li>
+<li>worker开始执行任务将状态修改为STARTED；</li>
+<li>当设置retry标志时，任务一旦失败，状态修改为RETRY，等待后续轮转执行；</li>
+<li>任务最终的执行结果为SUCCESS或FAILURE，表示成功或失败，失败时伴随失败原因存储至backend。<br>状态流转示意图如下：</li>
+</ol>
+<p><img src="/images/machinery-state-flow.png" alt="machinery-state-flow"></p>
+<p>关于Machinery详细用法，请参考<a href="https://github.com/RichardKnop/machinery" target="_blank" rel="noopener">官方文档</a>，本文不做赘述。</p>
+<h1 id="工程应用"><a href="#工程应用" class="headerlink" title="工程应用"></a>工程应用</h1><p>当前我负责产品的数据中心模块支持多种数据源的数据接入、多种存储介质的数据存储、数据集管理、数据导出等功能。</p>
+<p>支持多种结构化/非结构化数据源及数据存储的适配，支持：</p>
+<ul>
+<li>配置结构化存储，如Mysql；</li>
+<li>非结构化存储，如腾讯cos、开源ceph、hdfs；</li>
+<li>块存储，如nas；</li>
+</ul>
+<p>作为平台存储。</p>
+<p>同时支持对接多种外部数据源获取训练样本及业务生产数据，如腾讯cos，开源ceph，大数据hdfs存储，Hive数据仓库及结构化mysql数据库。</p>
+<h2 id="异步任务场景"><a href="#异步任务场景" class="headerlink" title="异步任务场景"></a>异步任务场景</h2><p>在上述业务功能和逻辑实现过程中，伴随着大量耗时操作如数据集导入、数据导出、异步下载、异步删除等场景：</p>
+<ul>
+<li>数据集导入：客户端上传数据集压缩包后，发送创建数据集请求，后台异步完成数据集导入逻辑；</li>
+<li>数据集导出：根据客户端选中数据集标签，筛选多个数据集的数据文件和标签，生成压缩文件导出；</li>
+<li>异步下载：后台拉取数据集并生成压缩包后，生成下载地址给客户端下载；</li>
+<li>异步删除：客户端发起删除请求后，同步删除数据集记录，并异步清理数据集文件；<br>……（等其他场景）<br>上述业务操作均需要通过异步任务的方式来增加系统的吞吐量，减少同步请求的耗时。</li>
+</ul>
+<h2 id="Machinery实践应用"><a href="#Machinery实践应用" class="headerlink" title="Machinery实践应用"></a>Machinery实践应用</h2><p>由于数据中心业务逻辑较复杂，涉及的操作比较多，无法一一列举，这里以数据集异步删除为例，说明Machinery在项目过程中的实践应用。</p>
+<h3 id="异步删除流程图"><a href="#异步删除流程图" class="headerlink" title="异步删除流程图"></a>异步删除流程图</h3><p><img src="/images/dataset-delete-workflow.png" alt="dataset-delete-workflow"></p>
+<p>该工作流程解释如下：</p>
+<ol>
+<li>server端收到请求并处理；</li>
+<li>server端发送删除文件异步任务；</li>
+<li>server端删除数据集记录；</li>
+<li>返回请求处理成功，无耗时操作，同步返回；</li>
+<li>多worker实例分取1个删除文件任务；</li>
+<li>每个worker实例执行删除任务。</li>
+</ol>
+<p>示例代码如下。</p>
+<h3 id="Server端代码示例"><a href="#Server端代码示例" class="headerlink" title="Server端代码示例"></a>Server端代码示例</h3><figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// server端注册删除文件任务</span></span><br><span class="line">server.RegisterTask(<span class="string">"delete-file"</span>, DeleteFile)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 生成删除文件任务</span></span><br><span class="line">signature := &amp;tasks.Signature&#123;</span><br><span class="line">	UUID:       <span class="string">"delete-file-1234567"</span>,</span><br><span class="line">	Name:       <span class="string">"delete-file"</span>,</span><br><span class="line">	RoutingKey: <span class="string">"delete-file"</span>,</span><br><span class="line">	Args: []tasks.Arg&#123;</span><br><span class="line">		&#123;</span><br><span class="line"> 			Name:  <span class="string">"filePath"</span></span><br><span class="line">			Type:  <span class="string">"string"</span>,</span><br><span class="line">			Value: <span class="string">"/data/dataset/1234567"</span>,</span><br><span class="line">		&#125;,</span><br><span class="line">	&#125;,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 发送任务至broker</span></span><br><span class="line">asyncResult, err := server.SendTask(signature)</span><br></pre></td></tr></table></figure>
+
+<h3 id="Worker端代码示例"><a href="#Worker端代码示例" class="headerlink" title="Worker端代码示例"></a>Worker端代码示例</h3><figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取任务执行worker，此处删除文件队列名为"delete-file-queue"</span></span><br><span class="line">worker := server.NewCustomQueueWorker(<span class="string">"delete-file"</span><span class="comment">/*RoutingKey*/</span>, <span class="number">2</span><span class="comment">/*worker并发数*/</span>, <span class="string">"delete-file-queue"</span>)</span><br><span class="line"><span class="comment">// 启动worker</span></span><br><span class="line">errorsChan := <span class="built_in">make</span>(<span class="keyword">chan</span> error)</span><br><span class="line">worker.LaunchAsync(errorsChan)</span><br><span class="line"></span><br><span class="line"><span class="comment">// delete-file执行方法（已由server端注册）</span></span><br><span class="line"><span class="comment">// Machinery执行方法返回的最后一个参数必须为error</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">DeleteFile</span><span class="params">(filePath <span class="keyword">string</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="comment">// 简单示例</span></span><br><span class="line">	os.RemoveAll(filePath)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>本文介绍了Machinery异步框架的组件构成、工作原理、状态流转等基本内容，阐述了该框架在实际项目实际开发中的应用，并给出了实际业务场景中的简化实现。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#背景"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#异步框架Machinery简介"><span class="toc-number">2.</span> <span class="toc-text">异步框架Machinery简介</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#简介"><span class="toc-number">2.1.</span> <span class="toc-text">简介</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#组件构成"><span class="toc-number">2.2.</span> <span class="toc-text">组件构成</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#工作流程"><span class="toc-number">2.3.</span> <span class="toc-text">工作流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#状态维护"><span class="toc-number">2.4.</span> <span class="toc-text">状态维护</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#工程应用"><span class="toc-number">3.</span> <span class="toc-text">工程应用</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#异步任务场景"><span class="toc-number">3.1.</span> <span class="toc-text">异步任务场景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Machinery实践应用"><span class="toc-number">3.2.</span> <span class="toc-text">Machinery实践应用</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#异步删除流程图"><span class="toc-number">3.2.1.</span> <span class="toc-text">异步删除流程图</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Server端代码示例"><span class="toc-number">3.2.2.</span> <span class="toc-text">Server端代码示例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Worker端代码示例"><span class="toc-number">3.2.3.</span> <span class="toc-text">Worker端代码示例</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#总结"><span class="toc-number">4.</span> <span class="toc-text">总结</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://sagittariusyx.github.io/2021/09/24/machinery-framework-tutorial/" target="_blank" rel="noopener"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://sagittariusyx.github.io/2021/09/24/machinery-framework-tutorial/&text=异步任务框架Machinery简介及工程实践" target="_blank" rel="noopener"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://sagittariusyx.github.io/2021/09/24/machinery-framework-tutorial/&title=异步任务框架Machinery简介及工程实践" target="_blank" rel="noopener"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=异步任务框架Machinery简介及工程实践&body=Check out this article: https://sagittariusyx.github.io/2021/09/24/machinery-framework-tutorial/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2023 yxiao
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m) {i['GoogleAnalyticsObject']=r;i[r]=i[r]||function() {
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-159372775-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>

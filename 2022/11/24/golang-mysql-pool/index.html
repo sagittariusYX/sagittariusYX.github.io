@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="背景在产品交付客户的过程中，客户现场的基础组件（如mysql、redis等）与厂内测试环境有可能会有较大差异。日前遇到某客户的mysql服务端配置如下：  最大连接数为10； 主动关闭连接时间为10分钟。  现象来看，连接经常被服务端主动关闭，偶现database连接异常。究其原因是业务模块配置的MaxConn和MaxLifeTime较大，超过了服务端的配置大小。 本文基于这个case，分析Gol">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Golang数据库连接池原理及调优实践">
+<meta property="og:url" content="https://sagittariusyx.github.io/2022/11/24/golang-mysql-pool/index.html">
+<meta property="og:site_name" content="YXiao&#39;s Blog">
+<meta property="og:description" content="背景在产品交付客户的过程中，客户现场的基础组件（如mysql、redis等）与厂内测试环境有可能会有较大差异。日前遇到某客户的mysql服务端配置如下：  最大连接数为10； 主动关闭连接时间为10分钟。  现象来看，连接经常被服务端主动关闭，偶现database连接异常。究其原因是业务模块配置的MaxConn和MaxLifeTime较大，超过了服务端的配置大小。 本文基于这个case，分析Gol">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/sql-db-workflow.png">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/create-conn.png">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/create-conn-code.png">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/cached-or-new-conn.png">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/release-conn.png">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/clean-conn-code.png">
+<meta property="og:image" content="https://sagittariusyx.github.io/images/important-things.png">
+<meta property="article:published_time" content="2022-11-24T13:29:21.000Z">
+<meta property="article:modified_time" content="2023-02-24T08:41:53.789Z">
+<meta property="article:author" content="yxiao">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://sagittariusyx.github.io/images/sql-db-workflow.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Golang数据库连接池原理及调优实践</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+    <script data-ad-client="ca-pub-9170262800275390" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" href="/2022/08/05/paxos/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://sagittariusyx.github.io/2022/11/24/golang-mysql-pool/" target="_blank" rel="noopener"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://sagittariusyx.github.io/2022/11/24/golang-mysql-pool/&text=Golang数据库连接池原理及调优实践" target="_blank" rel="noopener"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://sagittariusyx.github.io/2022/11/24/golang-mysql-pool/&title=Golang数据库连接池原理及调优实践" target="_blank" rel="noopener"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Golang数据库连接池原理及调优实践&body=Check out this article: https://sagittariusyx.github.io/2022/11/24/golang-mysql-pool/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#背景"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#池化技术带来的优势"><span class="toc-number">2.</span> <span class="toc-text">池化技术带来的优势</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Golang数据库连接池的设计"><span class="toc-number">3.</span> <span class="toc-text">Golang数据库连接池的设计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#建立连接"><span class="toc-number">3.1.</span> <span class="toc-text">建立连接</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#释放连接"><span class="toc-number">3.2.</span> <span class="toc-text">释放连接</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#清理连接"><span class="toc-number">3.3.</span> <span class="toc-text">清理连接</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#参数性能优化"><span class="toc-number">4.</span> <span class="toc-text">参数性能优化</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#SetMaxOpenConns"><span class="toc-number">4.1.</span> <span class="toc-text">SetMaxOpenConns</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SetMaxIdleConns"><span class="toc-number">4.2.</span> <span class="toc-text">SetMaxIdleConns</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SetConnMaxLifetime"><span class="toc-number">4.3.</span> <span class="toc-text">SetConnMaxLifetime</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#总结"><span class="toc-number">5.</span> <span class="toc-text">总结</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Golang数据库连接池原理及调优实践
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">YXiao's Blog</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2022-11-24T13:29:21.000Z" itemprop="datePublished">2022-11-24</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fas fa-archive"></i>
+        <a class="category-link" href="/categories/Golang/">Golang</a> › <a class="category-link" href="/categories/Golang/MySQL/">MySQL</a>
+    </div>
+
+
+      
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>在产品交付客户的过程中，客户现场的基础组件（如mysql、redis等）与厂内测试环境有可能会有较大差异。日前遇到某客户的mysql服务端配置如下：</p>
+<ul>
+<li>最大连接数为10；</li>
+<li>主动关闭连接时间为10分钟。</li>
+</ul>
+<p>现象来看，连接经常被服务端主动关闭，偶现database连接异常。究其原因是业务模块配置的MaxConn和MaxLifeTime较大，超过了服务端的配置大小。</p>
+<p>本文基于这个case，分析Golang中mysql连接池技术的原理，以及基于maxIdle、maxOpen和maxLifeTime进行调优的实践。</p>
+<h1 id="池化技术带来的优势"><a href="#池化技术带来的优势" class="headerlink" title="池化技术带来的优势"></a>池化技术带来的优势</h1><p>我们编程中常见的池化（Pool）技术有对象池、线程池、数据库连接池等，它们的特点都是将开销较大的资源，维护在一个特定的“池”中，在请求量或访问量大时，能降低系统、连接频繁建立销毁的开销，从而明显优化程序的性能。池化技术定义了最小对象（连接）数、最大对象（连接）数、存活时间和阻塞队列等配置，方便进行统一的管理与复用。通常还会有一些探活机制、gc回收、监控配置等功能。</p>
+<p>本文主要基于Golang数据库标准库，介绍分析数据库连接池的基本工作原理。数据库连接池负责对已经建立好的数据库连接进行分配、管理、释放和回收；允许上层应用程序在已有连接的基础上复用，而不需要再重新建立；并且释放超过最大空闲时间的连接，从而避免连接泄漏。能明显提高数据库操作的性能。</p>
+<p>数据库连接池带来的优势：</p>
+<ul>
+<li>资源重用：避免了频繁创建、释放连接引起的大量性能开销。在减少系统消耗的基础上，另一方面也增进了系统运行环境的平稳性（减少内存碎片以及数据库临时进程/线程的数量）；</li>
+<li>更快的系统响应速度：数据库连接池在初始化过程中，往往已经创建了若干数据库连接置于池中备用。此时连接的初始化工作均已完成。对于业务请求处理而言，直接利用现有可用连接，避免了数据库连接初始化和释放过程的时间开销，从而缩减了系统整体响应时间；</li>
+<li>新的资源分配手段：对于多应用共享同一数据库的系统而言，可在应用层通过数据库连接的配置，实现数据库连接池技术。通过对应用最大可用数据库连接数的限制，避免某一应用独占所有数据库资源；</li>
+<li>统一的连接管理，避免数据库连接泄漏：可根据预先的连接占用超时设定，强制收回被占用连接，从而避免了常规数据库连接操作中可能出现的资源泄漏。</li>
+</ul>
+<h1 id="Golang数据库连接池的设计"><a href="#Golang数据库连接池的设计" class="headerlink" title="Golang数据库连接池的设计"></a>Golang数据库连接池的设计</h1><p>Golang中对于数据库的操作主要借助标准库database/sql，对上层应用暴露了标准的操作接口与方法，对下层驱动暴露了简单的驱动接口，且内部实现了连接池。从而使得不同的驱动可以方便简单地实现这些驱动接口，而不需关心连接池的细节。</p>
+<p>sql.DB数据库连接池的实现逻辑为：</p>
+<p><img src="/images/sql-db-workflow.png" alt="sql-db-workflow"></p>
+<p>上图中最重要的几个步骤：建立连接、释放连接以及清理连接，下面针对这三个方面进行分析。</p>
+<h2 id="建立连接"><a href="#建立连接" class="headerlink" title="建立连接"></a>建立连接</h2><p>sql.DB中数据库的连接并不是在sql.Open返回db对象时，连接就建立的，这一步仅仅开了个接收建连请求的channel，实际建连步骤要等到执行具体SQL语句时才会进行。</p>
+<p>在database/sql对上层应用暴露的操作接口中，比较常用的是Exec和Query，前者常用于执行写SQL，后者可以用于读SQL。但是不论走哪个方法，都会调用到建连逻辑db.conn方法，附带建连上下文和建连策略两个参数。</p>
+<p><img src="/images/create-conn.png" alt="create-conn"></p>
+<p>其中建联策略分为alwaysNewConn和cachedOrNewConn，前者永远走新建连接的策略，后者会从缓存的空闲连接中取出连接，如果没有，则新建一个。</p>
+<p><img src="/images/create-conn-code.png" alt="create-conn-code"></p>
+<p>使用cachedOrNewConn策略的建连逻辑中，会先判断是否有空闲连接：</p>
+<ul>
+<li>如果有取出首个空闲连接，紧接着判断该连接是否过期需要被回收：<ul>
+<li>如果没有过期则可以正常使用进入后续逻辑；</li>
+<li>如果没有空闲连接则判断连接数是不是已经达到最大；</li>
+</ul>
+</li>
+<li>若没有可以新建连接，反之就得阻塞这个请求让它等待可用连接。</li>
+</ul>
+<p>sql.DB会优先尝试cachedOrNewConn策略，只有在失败了一定次数之后，才会尝试alwaysNewConn建连策略。</p>
+<p><img src="/images/cached-or-new-conn.png" alt="cached-or-new-conn"></p>
+<h2 id="释放连接"><a href="#释放连接" class="headerlink" title="释放连接"></a>释放连接</h2><p>连接使用完毕之后，需要被放入连接池，并同时进行对连接的可靠性、合法性检测，如果连接异常，则不应加入连接池，而是应该新建一个健康的连接并替换。该逻辑在db.putConn()中：</p>
+<p><img src="/images/release-conn.png" alt="release-conn"></p>
+<h2 id="清理连接"><a href="#清理连接" class="headerlink" title="清理连接"></a>清理连接</h2><p>database/sql提供了三个关键参数进行连接池配置，分别是maxIdle、maxOpen和maxLifeTime。</p>
+<p>数据库连接无法保证长期有效，比较浪费资源。</p>
+<ul>
+<li>MySQL服务端默认会强制断连8h的空闲连接，对应客户端在sql.DB中提供maxLifeTime选项设置连接复用的最大时间，这里并非是连接空闲时间，而是从连接建立到这个时间点就会被断连回收，从而保证连接的有效性；</li>
+<li>sql.DB的清理机制是异步完成的，默认每秒从freeConn池中遍历检查空闲的连接，判断是否超过了maxLifeTime，超出会加入closing数组，并在后续被close掉。</li>
+</ul>
+<p><img src="/images/clean-conn-code.png" alt="clean-conn-code"></p>
+<h1 id="参数性能优化"><a href="#参数性能优化" class="headerlink" title="参数性能优化"></a>参数性能优化</h1><h2 id="SetMaxOpenConns"><a href="#SetMaxOpenConns" class="headerlink" title="SetMaxOpenConns"></a>SetMaxOpenConns</h2><p>默认情况下，sql.DB同时打开的连接数没有限制，若不加限制，在极端情况会把DB连接打满（未加索引，大事务阻塞等情况）。所以可以通过SetMaxOpenConns来配置数据库连接池的最大连接数。</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Initialize a new connection pool</span></span><br><span class="line">db, err := sql.Open(<span class="string">"mysql"</span>, dbConf)</span><br><span class="line"><span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">    log.Fatal(err)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Set the maximum number of concurrently open connections (in-use + idle)</span></span><br><span class="line"><span class="comment">// to 5. Setting this to less than or equal to 0 will mean there is no </span></span><br><span class="line"><span class="comment">// maximum limit (which is also the default setting).</span></span><br><span class="line">db.SetMaxOpenConns(<span class="number">5</span>)</span><br></pre></td></tr></table></figure>
+<p>在此示例代码中，连接池最大限制为5个同时打开的连接。后续如果所有5个连接都已标记为正在使用，并且需要另一个新连接，则应用程序将被迫等待，直到5个连接中的一个被释放并变为空闲。</p>
+<h2 id="SetMaxIdleConns"><a href="#SetMaxIdleConns" class="headerlink" title="SetMaxIdleConns"></a>SetMaxIdleConns</h2><p>默认情况下sql.DB最多允许在连接池中保留2个空闲连接，可以通过SetMaxIdleConns方法更改空闲连接数。</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Initialize a new connection pool</span></span><br><span class="line">db, err := sql.Open(<span class="string">"mysql"</span>, dbConf)</span><br><span class="line"><span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">    log.Fatal(err)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Set the maximum number of concurrently idle connections to 5. Setting this</span></span><br><span class="line"><span class="comment">// to less than or equal to 0 will mean that no idle connections are retained.</span></span><br><span class="line">db.SetMaxIdleConns(<span class="number">5</span>)</span><br></pre></td></tr></table></figure>
+
+<p>MaxIdleConn如何设置？官方推荐idleConn与maxConn数量相同，理由是连接的建立和断连需要开销，且比预想要频繁得多。可以搭配maxLifeTime进行空闲连接的断连配置。</p>
+<p><img src="/images/important-things.png" alt="important-things"></p>
+<h2 id="SetConnMaxLifetime"><a href="#SetConnMaxLifetime" class="headerlink" title="SetConnMaxLifetime"></a>SetConnMaxLifetime</h2><p>SetConnMaxLifetime设置了连接可重用的最大时间长度。</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Initialize a new connection pool</span></span><br><span class="line">db, err := sql.Open(<span class="string">"mysql"</span>, dbConf)</span><br><span class="line"><span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">    log.Fatal(err)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Set the maximum lifetime of a connection to 1 hour. Setting it to 0</span></span><br><span class="line"><span class="comment">// means that there is no maximum lifetime and the connection is reused</span></span><br><span class="line"><span class="comment">// forever (which is the default behavior).</span></span><br><span class="line">db.SetConnMaxLifetime(time.Hour)</span><br></pre></td></tr></table></figure>
+
+<p>在如上示例中，设置了连接可重用的最大时间长度为一小时，则所有的连接将在首次创建后一小时“过期”，并且在它们过期后将无法重用，需重新创建。但需要注意的是：</p>
+<ul>
+<li>不能硬性保证连接将在池中存在一个小时；很可能由于某种原因连接不可用，并在此之前自动关闭；</li>
+<li>建立连接后，在一个多小时后仍然可以使用，只是无法开始重用；</li>
+<li>不是连接空闲超时。连接将在第一次创建后一小时到期，而不是在上一次空闲后一小时；</li>
+<li>每秒执行一次清理操作，以自动删除池中的“过期”连接。</li>
+</ul>
+<p>从理论上讲，maxLifetime连接越短，连接终止的频率就越高，因此，需要从头开始创建连接的频率就越高。所以考虑到重新建连的开销，不应把maxLifetime时间设置过短，但建议小于服务端主动关闭连接的时间（默认8小时）。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>基于本文分析，对上述3个参数进行一个简单的总结：</p>
+<ol>
+<li>根据经验，应该明确设置一个MaxOpenConns值；</li>
+<li>通常更高的MaxOpenConns和MaxIdleConns值理论上会有更好的性能；但太大的空闲连接池（连接长时间未被重用并最终被标记回收）可能会导致性能下降；</li>
+<li>为了规避2中的风险，需要设置一个相对较短的ConnMaxLifetime，但也要考虑连接不被太频繁断连和重建；</li>
+<li>MaxIdleConns建议与MaxOpenConns设置相同。</li>
+</ol>
+<p>例如：</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">db.SetMaxOpenConns(<span class="number">32</span>)</span><br><span class="line">db.SetMaxIdleConns(<span class="number">32</span>)</span><br><span class="line">db.SetConnMaxLifetime(<span class="number">5</span>*time.Minute)</span><br></pre></td></tr></table></figure>
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#背景"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#池化技术带来的优势"><span class="toc-number">2.</span> <span class="toc-text">池化技术带来的优势</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Golang数据库连接池的设计"><span class="toc-number">3.</span> <span class="toc-text">Golang数据库连接池的设计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#建立连接"><span class="toc-number">3.1.</span> <span class="toc-text">建立连接</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#释放连接"><span class="toc-number">3.2.</span> <span class="toc-text">释放连接</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#清理连接"><span class="toc-number">3.3.</span> <span class="toc-text">清理连接</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#参数性能优化"><span class="toc-number">4.</span> <span class="toc-text">参数性能优化</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#SetMaxOpenConns"><span class="toc-number">4.1.</span> <span class="toc-text">SetMaxOpenConns</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SetMaxIdleConns"><span class="toc-number">4.2.</span> <span class="toc-text">SetMaxIdleConns</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SetConnMaxLifetime"><span class="toc-number">4.3.</span> <span class="toc-text">SetConnMaxLifetime</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#总结"><span class="toc-number">5.</span> <span class="toc-text">总结</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://sagittariusyx.github.io/2022/11/24/golang-mysql-pool/" target="_blank" rel="noopener"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://sagittariusyx.github.io/2022/11/24/golang-mysql-pool/&text=Golang数据库连接池原理及调优实践" target="_blank" rel="noopener"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://sagittariusyx.github.io/2022/11/24/golang-mysql-pool/&title=Golang数据库连接池原理及调优实践" target="_blank" rel="noopener"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Golang数据库连接池原理及调优实践&body=Check out this article: https://sagittariusyx.github.io/2022/11/24/golang-mysql-pool/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2023 yxiao
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/archives/">文章</a></li>
+         
+          <li><a href="/categories/">目录</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/search/">搜索</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m) {i['GoogleAnalyticsObject']=r;i[r]=i[r]||function() {
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-159372775-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>
